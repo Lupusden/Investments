@@ -2543,7 +2543,7 @@ function renderAdminPage(el){
       appData.tabOrder.forEach(function(accId){
         var acc=getAccount(accId);if(!acc)return;
         var cat=acc.categoryId?getCategory(acc.categoryId):null;
-        var hCount=acc.holdings.filter(function(h){return(h.lots||[]).length>0;}).length;
+        var hCount=(acc.holdings||[]).filter(function(h){return(h.lots||[]).length>0;}).length;
         bodyHTML+='<div class="holding-row" style="grid-template-columns:1fr auto;min-height:32px">'
           +'<div class="cell cell-sym" style="text-align:left"><span class="sym">'+esc(acc.name)+'</span>'
           +(cat?'<span style="font-size:10px;color:var(--text2);margin-left:8px">'+esc(cat.name)+' · </span>':'')
@@ -2622,7 +2622,7 @@ function renderManageBody(){
       html+=appData.tabOrder.map(function(accId){
         var acc=getAccount(accId);if(!acc)return'';
         var cat=acc.categoryId?getCategory(acc.categoryId):null;
-        var hCount=acc.holdings.filter(function(h){return(h.lots||[]).length>0;}).length;
+        var hCount=(acc.holdings||[]).filter(function(h){return(h.lots||[]).length>0;}).length;
         return'<div class="admin-card-row">'
           +'<div style="flex:1"><div class="admin-card-label">'+esc(acc.name)+'</div>'
           +'<div class="admin-card-sub">'+(cat?esc(cat.name)+' &nbsp;·&nbsp; ':'')+hCount+' holding'+(hCount!==1?'s':'')+'</div></div>'
