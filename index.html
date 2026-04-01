@@ -3044,8 +3044,10 @@ async function lookupImportExchanges(){
   indicator.style.display='none';
 }
 function doImport(){
-  var accId=parseInt(document.getElementById('importAccSel').value);
+  var accId=document.getElementById('importAccSel').value;
   var acc=getAccount(accId);if(!acc){alert('Please select a valid account.');return;}
+  if(!acc.holdings)acc.holdings=[];
+  if(!acc.trades)acc.trades=[];
   var added=0,skipped=0;
   if(_importMode==='div'){
     _importRows.forEach(function(row){
