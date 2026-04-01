@@ -767,6 +767,9 @@ function calcHolding(h){
   return{totalShares:ts,totalCost:tc,avgPrice:avg,marketValue:mv,netPnL:npnl,netPnLPct:npnlp,dailyPnL:dpnl,dailyPnLPct:dp,fxGain:fxg,stockGain:npnl-fxg,dividendTotal:divTotal};
 }
 function calcAccountStats(acc){
+  if(!acc.holdings)acc.holdings=[];
+  if(!acc.trades)acc.trades=[];
+  if(!acc.cash)acc.cash=[];
   var tv=0,tc=0,td=0,tfx=0,tdiv=0;
   for(var i=0;i<acc.holdings.length;i++){var c=calcHolding(acc.holdings[i]);tv+=c.marketValue;tc+=c.totalCost;td+=c.dailyPnL;tfx+=c.fxGain;tdiv+=c.dividendTotal;}
   var ic=tc; // investment-only cost (before cash)
@@ -2310,6 +2313,8 @@ function saveNewPosition(){
   var comm=parseFloat(document.getElementById('posCommission').value)||0;
   if(!sym||!shares||!price){alert('Please fill in Symbol, Shares, and Purchase Price.');return;}
   var acc=getAccount(addPosAccId);if(!acc)return;
+  if(!acc.holdings)acc.holdings=[];
+  if(!acc.trades)acc.trades=[];
   var manualPrice=!!(document.getElementById('posManualPrice')||{}).checked;
   if(manualPrice&&!exchange)exchange=_selCurrency==='CAD'?'Toronto':'—';
   var flag=exchFlag(exchange,_selCurrency);
