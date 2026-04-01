@@ -863,7 +863,7 @@ function renderAccountBar(){
   var bar=document.getElementById('subTabBar');
   bar.innerHTML='';
   var accs=[];
-  if(activeTab==='summary'||activeTab==='admin'){
+  if(activeTab==='summary'){
     appData.catOrder.forEach(function(catId){
       appData.tabOrder.forEach(function(aId){var a=getAccount(aId);if(a&&a.categoryId===catId)accs.push(a);});
     });
@@ -3218,12 +3218,10 @@ firebase.auth().onAuthStateChanged(function(user){
 // ---- INIT ----
 function _importHWC243(){
   if(appData.accounts.find(function(a){return a.name==='HWC 243';}))return;
-  var catId='cat2';
-  if(!appData.categories.find(function(c){return c.id===catId;})){
-    appData.categories.push({id:catId,name:'HWC',icon:'🏢'});
-    appData.catOrder.push(catId);
-  }
-  var uid=mkUid;
+  var cat=appData.categories.find(function(c){return c.name==='HWC';});
+  var catId;
+  if(cat){catId=cat.id;}else{catId=mkUid();appData.categories.push({id:catId,name:'HWC',icon:'🏢'});if(!appData.catOrder)appData.catOrder=[];appData.catOrder.push(catId);}
+
   var acc={
     id:mkUid(),name:'HWC 243',categoryId:catId,
     holdings:[
