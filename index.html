@@ -2549,8 +2549,8 @@ function renderAdminPage(el){
           +(cat?'<span style="font-size:10px;color:var(--text2);margin-left:8px">'+esc(cat.name)+' · </span>':'')
           +'<span style="font-size:10px;color:var(--text2)">'+hCount+' holding'+(hCount!==1?'s':'')+'</span></div>'
           +'<div class="cell" style="display:flex;gap:6px">'
-          +'<button class="btn-ghost" onclick="manageRename(\'account\','+accId+')">Rename</button>'
-          +'<button class="btn-ghost danger" onclick="manageDelete(\'account\','+accId+')">Delete</button>'
+          +'<button class="btn-ghost" onclick="manageRename(\'account\',\''+accId+'\')">Rename</button>'
+          +'<button class="btn-ghost danger" onclick="manageDelete(\'account\',\''+accId+'\')">Delete</button>'
           +'</div></div>';
       });
       bodyHTML+='</div>';
@@ -2627,8 +2627,8 @@ function renderManageBody(){
           +'<div style="flex:1"><div class="admin-card-label">'+esc(acc.name)+'</div>'
           +'<div class="admin-card-sub">'+(cat?esc(cat.name)+' &nbsp;·&nbsp; ':'')+hCount+' holding'+(hCount!==1?'s':'')+'</div></div>'
           +'<div class="admin-card-actions">'
-          +'<button class="btn-ghost" onclick="manageRename(\'account\','+accId+')">Rename</button>'
-          +'<button class="btn-ghost danger" onclick="manageDelete(\'account\','+accId+')">Delete</button>'
+          +'<button class="btn-ghost" onclick="manageRename(\'account\',\''+accId+'\')">Rename</button>'
+          +'<button class="btn-ghost danger" onclick="manageDelete(\'account\',\''+accId+'\')">Delete</button>'
           +'</div></div>';
       }).join('');
       html+='</div>';
