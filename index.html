@@ -733,10 +733,10 @@ function saveAll(){
 }
 
 function fmt(n,dec){if(dec===undefined)dec=2;if(n==null||isNaN(n))return'—';return new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(n);}
-function fmtC(n,dec){if(dec===undefined)dec=2;if(n==null||isNaN(n))return'—';var abs=Math.abs(n);var s=new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(abs);var sym='$';return(n<0?'-':'')+sym+s;}
+function fmtC(n,dec){if(dec===undefined)dec=0;if(n==null||isNaN(n))return'—';var abs=Math.abs(n);var s=new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(abs);var sym='$';return(n<0?'-':'')+sym+s;}
 var CCY_SYMS={'USD':'$','CAD':'CA$','GBP':'£','EUR':'€','JPY':'¥','AUD':'A$','HKD':'HK$','SGD':'S$','CNY':'¥','INR':'₹','BRL':'R$','CHF':'Fr','KRW':'₩','SEK':'kr','NOK':'kr','DKK':'kr','NZD':'NZ$','ZAR':'R','TRY':'₺','ILS':'₪','MXN':'$'};
-function fmtNative(n,currency,dec){if(dec===undefined)dec=2;if(n==null||isNaN(n))return'—';var abs=Math.abs(n);var s=new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(abs);var sym=CCY_SYMS[currency||'USD']||'$';return(n<0?'-':'')+sym+s;}
-function fmtPct(n){if(n==null||isNaN(n))return'—';return(n>=0?'+':'')+fmt(n,2)+'%';}
+function fmtNative(n,currency,dec){if(dec===undefined)dec=0;if(n==null||isNaN(n))return'—';var abs=Math.abs(n);var s=new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(abs);var sym=CCY_SYMS[currency||'USD']||'$';return(n<0?'-':'')+sym+s;}
+function fmtPct(n){if(n==null||isNaN(n))return'—';return(n>=0?'+':'')+fmt(n,1)+'%';}
 function cc(n){return n>0?'pos':n<0?'neg':'';}
 function today(){return new Date().toISOString().slice(0,10);}
 function getAccount(id){return appData.accounts.find(function(a){return a.id==id;});}
@@ -812,7 +812,7 @@ function getCashItems(accs){
 function cashEntriesPanel(acc,ccy,isOpen){
   var entries=(acc.cash||[]).filter(function(e){return e.currency===ccy;}).sort(function(a,b){return a.date<b.date?-1:1;});
   var rows=entries.map(function(e){
-    return'<div class="cash-lot-row"><div class="lot-val">'+fmtDate(e.date)+'</div><div class="lot-val">'+fmt(e.amount||0,2)+'</div><div class="lot-val">'+esc(ccy)+'</div><div class="lot-val" style="color:var(--text2)">'+esc(e.note||'—')+'</div><div class="lot-actions"><button class="btn-ghost" onclick="openEditCashEntry('+acc.id+',\''+e.id+'\')">Edit</button><button class="btn-ghost danger" onclick="deleteCashEntry('+acc.id+',\''+e.id+'\')">Delete</button></div></div>';
+    return'<div class="cash-lot-row"><div class="lot-val">'+fmtDate(e.date)+'</div><div class="lot-val">'+fmt(e.amount||0,0)+'</div><div class="lot-val">'+esc(ccy)+'</div><div class="lot-val" style="color:var(--text2)">'+esc(e.note||'—')+'</div><div class="lot-actions"><button class="btn-ghost" onclick="openEditCashEntry('+acc.id+',\''+e.id+'\')">Edit</button><button class="btn-ghost danger" onclick="deleteCashEntry('+acc.id+',\''+e.id+'\')">Delete</button></div></div>';
   }).join('');
   var panelId='cash_panel_'+ccy+'_'+acc.id;
   return'<div class="cash-panel'+(isOpen?' open':'')+'" id="'+panelId+'"><div class="cash-lot-head"><span>Date</span><span>Amount</span><span>Currency</span><span>Note</span><span></span></div>'+rows+'<div class="add-lot-row"><button class="btn-ghost" onclick="openAddCashEntry('+acc.id+',\''+ccy+'\')">+ Add '+ccy+' Cash</button></div></div>';
@@ -1090,8 +1090,8 @@ function cashStatCard(accs){
   var total=list.reduce(function(s,a){return s+getCashPortValue(a);},0);
   return '<div class="stat-card"><div class="stat-label">Cash</div>'
     +'<div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
-    +'<span style="color:var(--text2);font-weight:400">US$</span> '+fmt(usd,2)
-    +' <span style="color:var(--border-light)">|</span> <span style="color:var(--text2);font-weight:400">CA$</span> '+fmt(cad,2)
+    +'<span style="color:var(--text2);font-weight:400">US$</span> '+fmt(usd,0)
+    +' <span style="color:var(--border-light)">|</span> <span style="color:var(--text2);font-weight:400">CA$</span> '+fmt(cad,0)
     +' <span style="color:var(--border-light)">|</span> <span style="color:var(--text)">'+fmtC(total)+'</span>'
     +'</div></div>';
 }
@@ -1160,7 +1160,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
       +'<div class="cell cell-name-col">USD Cash</div>'
       +acctCell
       +'<div class="cell" style="text-align:left;font-size:12px;color:var(--text2)">Cash</div>'
-      +'<div class="cell">'+fmt(_usdTotal,2)+'</div>'
+      +'<div class="cell">'+fmt(_usdTotal,0)+'</div>'
       +_bd+'<div class="cell">'+fmtC(_pvUsd)+'</div>'+_bd
       +'<div class="cell">'+fmtC(_pvUsd)+'</div>'
       +_bd+_bd+_bd+_bd
@@ -1174,7 +1174,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
       +'<div class="cell cell-name-col">CAD Cash</div>'
       +acctCell
       +'<div class="cell" style="text-align:left;font-size:12px;color:var(--text2)">Cash</div>'
-      +'<div class="cell">'+fmt(_cadTotal,2)+'</div>'
+      +'<div class="cell">'+fmt(_cadTotal,0)+'</div>'
       +_bd+'<div class="cell">'+fmtC(_pvCad)+'</div>'+_bd
       +'<div class="cell">'+fmtC(_pvCad)+'</div>'
       +_bd+_bd+_bd+_bd
@@ -1201,7 +1201,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
       +'<div class="cell cell-name-col">USD Cash</div>'
       +_acctBlank
       +'<div class="cell" style="text-align:left;font-size:12px;color:var(--text2)">Cash</div>'
-      +'<div class="cell">'+fmt(_aggUsd,2)+'</div>'
+      +'<div class="cell">'+fmt(_aggUsd,0)+'</div>'
       +_bd+'<div class="cell">'+fmtC(_pvAggUsd)+'</div>'+_bd
       +'<div class="cell">'+fmtC(_pvAggUsd)+'</div>'
       +_bd+_bd+_bd+_bd+_bd+_bd+_bd
@@ -1213,7 +1213,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
       +'<div class="cell cell-name-col">CAD Cash</div>'
       +_acctBlank
       +'<div class="cell" style="text-align:left;font-size:12px;color:var(--text2)">Cash</div>'
-      +'<div class="cell">'+fmt(_aggCad,2)+'</div>'
+      +'<div class="cell">'+fmt(_aggCad,0)+'</div>'
       +_bd+'<div class="cell">'+fmtC(_pvAggCad)+'</div>'+_bd
       +'<div class="cell">'+fmtC(_pvAggCad)+'</div>'
       +_bd+_bd+_bd+_bd+_bd+_bd+_bd
@@ -1301,16 +1301,16 @@ function lotsHTML(h,acc,isOpen){
     var nativePrice=fmtNative(l.price,hCcy);
     var fxToUSD=l.fxRate||(hCcy==='CAD'?_cadUsdRate:(h.fxRateToUSD||1));
     var fxDisp=fxToUSD>0?(1/fxToUSD).toFixed(4):'—';
-    var usdEquiv=fxToUSD>0?'$'+(l.price*fxToUSD).toFixed(2):'—';
+    var usdEquiv=fxToUSD>0?'$'+Math.round(l.price*fxToUSD).toLocaleString('en-US'):'—';
     var nativeComm=fmtNative(l.commission||0,hCcy);
     var fxCells=isNonUSD?'<div class="lot-val">'+fxDisp+'</div><div class="lot-val">'+usdEquiv+'</div>':'';
     var invested=(l.shares||0)*(l.price||0)+(l.commission||0);
     var investedFx=isNonUSD?invested*fxToUSD:invested;
     totInvested+=investedFx;totShares+=(l.shares||0);
-    var investedDisp='$'+investedFx.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    var investedDisp='$'+Math.round(investedFx).toLocaleString('en-US');
     return'<div class="lot-row"><div class="lot-val">'+fmtDate(l.date)+'</div><div class="lot-val">'+fmt(l.shares,3)+'</div><div class="lot-val">'+nativePrice+'</div>'+fxCells+'<div class="lot-val">'+nativeComm+'</div><div class="lot-val">'+investedDisp+'</div><div class="lot-actions"><button class="btn-ghost" onclick="openClosePosition('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Close Position</button><button class="btn-ghost" onclick="openEditLot('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Edit</button><button class="btn-ghost danger" onclick="confirmDeleteLot('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Delete</button></div></div>';
   }).join('');
-  var totInvestedDisp='$'+totInvested.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  var totInvestedDisp='$'+Math.round(totInvested).toLocaleString('en-US');
   var fxTotCols=isNonUSD?'<span></span><span></span>':'';
   var totalRow='<div class="lot-row" style="border-top:1px solid var(--border);margin-top:2px;font-weight:600"><div class="lot-val" style="color:var(--text2);font-weight:400">Total</div><div class="lot-val" style="font-weight:600">'+fmt(totShares,h.lots.some(function(l){return(l.shares||0)%1>0.0001;})?5:0)+'</div><div class="lot-val"></div>'+fxTotCols+'<div class="lot-val"></div><div class="lot-val" style="font-weight:600;color:var(--blue)">'+totInvestedDisp+'</div><div class="lot-actions"></div></div>';
   var buyPriceHdr='Buy Price'+(isNonUSD?' ('+hCcy+')':'');
@@ -2409,7 +2409,7 @@ function openEditLot(accId,holdingId,lotId){
       var fx=ll.fxRate||(hCcy2==='CAD'?_cadUsdRate:(h.fxRateToUSD||1));
       return s+((ll.shares||0)*(ll.price||0)+(ll.commission||0))*(hCcy2!=='USD'?fx:1);
     },0);
-    totInvEl.textContent='$'+totInv.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    totInvEl.textContent='$'+Math.round(totInv).toLocaleString('en-US');
   }
   openModal('modalEditLot');
 }
@@ -2728,7 +2728,7 @@ function renderLotsEditor(){
     var align=_rightCols[col]?'text-align:right;':'';
     return'<th style="'+align+'cursor:pointer;user-select:none;'+(active?'color:var(--blue)':'')+'" onclick="sortLotsEditor(\''+col+'\')">'+label+arrow+'</th>';
   }
-  function fmtMoney(v){return'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function fmtMoney(v){return'$'+Math.round(v).toLocaleString('en-US');}
   var html='<div style="overflow-x:auto;padding:0 10px 4px"><table class="admin-lots-table">';
   html+='<thead><tr>'+th('Symbol','symbol')+th('Name','symbol')+th('Date','date')+th('Shares','shares')+th('Price','price')+th('Invested','invested')+th('Commission','commission')+'<th></th></tr></thead><tbody>';
   rows.forEach(function(r){
@@ -2761,7 +2761,7 @@ function adminLotField(accId,hi,li,field,val){
   saveAll();
   // Refresh Invested cell
   var invEl=document.getElementById('adminInvested_'+hi+'_'+li);
-  if(invEl)invEl.textContent='$'+((lot.shares||0)*(lot.price||0)).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(invEl)invEl.textContent='$'+Math.round((lot.shares||0)*(lot.price||0)).toLocaleString('en-US');
 }
 function adminLotsUndo(){
   if(!_lotsUndoSnapshot)return;
