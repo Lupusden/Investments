@@ -2421,7 +2421,7 @@ function saveEditLot(){
   lot.commission=parseFloat(document.getElementById('editLotCommission').value)||0;
   var editFxRow=document.getElementById('editLotFxRow');
   if(editFxRow&&editFxRow.style.display!=='none'){var efxDisp=parseFloat(document.getElementById('editLotFxRate').value);if(efxDisp>0)lot.fxRate=1/efxDisp;} // convert USDCAD to CADUSD
-  saveAll();closeModal('modalEditLot');render();
+  saveAll();closeModal('modalEditLot');expandedHoldings={};activeSub='portfolio';render();
 }
 function confirmDeleteLot(accId,holdingId,lotId){
   showConfirmDelete('Delete this lot? This cannot be undone.',function(){
