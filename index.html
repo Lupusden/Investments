@@ -713,7 +713,13 @@ function loadAll(){
     initApp();
   });
 }
-function saveAll(){try{_lastSaveTime=Date.now();firebase.database().ref('appData').set(appData);}catch(e){}}
+function saveAll(){
+  try{
+    _lastSaveTime=Date.now();
+    appData._savedAt=_lastSaveTime;
+    firebase.database().ref('appData').set(appData);
+  }catch(e){}
+}
 
 function fmt(n,dec){if(dec===undefined)dec=2;if(n==null||isNaN(n))return'—';return new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(n);}
 function fmtC(n,dec){if(dec===undefined)dec=2;if(n==null||isNaN(n))return'—';var abs=Math.abs(n);var s=new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(abs);var sym='$';return(n<0?'-':'')+sym+s;}
@@ -3275,9 +3281,15 @@ function doLogin(){
 function doLogout(){firebase.auth().signOut();}
 function _setupRealtimeSync(ref){
   ref.on('value',function(snap){
-    if(Date.now()-_lastSaveTime<2000)return;
+    // Ignore if we just saved (our own write bouncing back)
+    if(Date.now()-_lastSaveTime<3000)return;
     var val=snap.val();
-    if(val){appData=val;render();}
+    if(!val)return;
+    // Only apply remote update if it is strictly newer than what we last saved
+    var remoteSavedAt=val._savedAt||0;
+    if(remoteSavedAt<=_lastSaveTime)return;
+    appData=val;
+    render();
   });
 }
 firebase.auth().onAuthStateChanged(function(user){
@@ -3290,58 +3302,7 @@ firebase.auth().onAuthStateChanged(function(user){
   }
 });
 // ---- INIT ----
-function _importHWC243(){
-  if(appData.accounts.find(function(a){return a.name==='HWC 243';}))return;
-  var cat=appData.categories.find(function(c){return c.name==='HWC';});
-  var catId;
-  if(cat){catId=cat.id;}else{catId=mkUid();appData.categories.push({id:catId,name:'HWC',icon:'🏢'});if(!appData.catOrder)appData.catOrder=[];appData.catOrder.push(catId);}
-
-  var acc={
-    id:mkUid(),name:'HWC 243',categoryId:catId,
-    holdings:[
-      {id:mkUid(),symbol:'ORCL',name:'Oracle',flag:'🇺🇸',exchange:'NYSE',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2025-01-22',shares:20,price:190.00,commission:0}]},
-      {id:mkUid(),symbol:'AVGO',name:'Broadcom',flag:'🇺🇸',exchange:'NASDAQ',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2025-01-22',shares:10,price:246.62,commission:0}]},
-      {id:mkUid(),symbol:'NVDA',name:'NVIDIA Corp.',flag:'🇺🇸',exchange:'NASDAQ',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2025-01-22',shares:21,price:144.76,commission:0}]},
-      {id:mkUid(),symbol:'BTC-USD',name:'Bitcoin',flag:'₿',exchange:'CRYPTO',currency:'USD',currentPrice:0,dayChangePct:0,lots:[
-        {id:mkUid(),date:'2024-12-19',shares:0.070232,price:98818.0,commission:0},
-        {id:mkUid(),date:'2024-12-19',shares:0.066248,price:104762.0,commission:0},
-        {id:mkUid(),date:'2024-12-18',shares:0.019869,price:104810.0,commission:0},
-        {id:mkUid(),date:'2024-12-17',shares:0.019364,price:107533.0,commission:0},
-        {id:mkUid(),date:'2024-12-17',shares:0.019434,price:107170.0,commission:0},
-        {id:mkUid(),date:'2024-12-16',shares:0.019585,price:103420.0,commission:0},
-        {id:mkUid(),date:'2021-04-17',shares:0.029513,price:54200.0,commission:0},
-        {id:mkUid(),date:'2021-04-16',shares:0.013058,price:61200.0,commission:0},
-        {id:mkUid(),date:'2021-03-25',shares:0.031111,price:50700.0,commission:0},
-        {id:mkUid(),date:'2021-03-23',shares:0.029023,price:54604.3,commission:0},
-        {id:mkUid(),date:'2021-01-21',shares:0.012061,price:41453.4,commission:0},
-        {id:mkUid(),date:'2021-01-20',shares:0.011233,price:44460.1,commission:0},
-        {id:mkUid(),date:'2021-01-19',shares:0.066257,price:45257.1,commission:0}
-      ]},
-      {id:mkUid(),symbol:'NVO',name:'Novo Nordisk ADR',flag:'🇩🇰',exchange:'NYSE',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2024-12-13',shares:200,price:105.68,commission:0}]},
-      {id:mkUid(),symbol:'PFE',name:'Pfizer',flag:'🇺🇸',exchange:'NYSE',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2024-12-13',shares:100,price:25.59,commission:0}]},
-      {id:mkUid(),symbol:'GOOG',name:'Alphabet C',flag:'🇺🇸',exchange:'NASDAQ',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2024-12-13',shares:50,price:192.77,commission:0}]},
-      {id:mkUid(),symbol:'DIS',name:'Walt Disney',flag:'🇺🇸',exchange:'NYSE',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2024-12-13',shares:50,price:113.69,commission:0}]},
-      {id:mkUid(),symbol:'META',name:'Meta Platforms',flag:'🇺🇸',exchange:'NASDAQ',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2024-12-13',shares:20,price:617.89,commission:0}]},
-      {id:mkUid(),symbol:'JNJ',name:'Johnson & Johnson',flag:'🇺🇸',exchange:'NYSE',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2024-12-13',shares:30,price:146.05,commission:0}]},
-      {id:mkUid(),symbol:'MSFT',name:'Microsoft Corp.',flag:'🇺🇸',exchange:'NASDAQ',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2024-12-13',shares:25,price:446.50,commission:0}]},
-      {id:mkUid(),symbol:'VTI',name:'Vanguard Total Stock Market',flag:'🇺🇸',exchange:'NYSE',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2021-06-03',shares:100,price:216.92,commission:0}]},
-      {id:mkUid(),symbol:'TSLA',name:'Tesla Inc.',flag:'🇺🇸',exchange:'NASDAQ',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2021-03-23',shares:9,price:225.24,commission:0}]},
-      {id:mkUid(),symbol:'TCEHY',name:'Tencent ADR',flag:'🇨🇳',exchange:'OTC',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2021-01-21',shares:23,price:87.940,commission:0}]},
-      {id:mkUid(),symbol:'SKYY',name:'First Trust Cloud Computing',flag:'🇺🇸',exchange:'NASDAQ',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2021-01-21',shares:21,price:99.31,commission:0}]},
-      {id:mkUid(),symbol:'SMH',name:'VanEck Semiconductor',flag:'🇺🇸',exchange:'NASDAQ',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2021-01-21',shares:18,price:122.47,commission:0}]},
-      {id:mkUid(),symbol:'COST',name:'Costco',flag:'🇺🇸',exchange:'NASDAQ',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2021-01-21',shares:6,price:361.30,commission:0}]},
-      {id:mkUid(),symbol:'AAPL',name:'Apple Inc.',flag:'🇺🇸',exchange:'NASDAQ',currency:'USD',currentPrice:0,dayChangePct:0,lots:[{id:mkUid(),date:'2021-01-21',shares:75,price:133.83,commission:0}]}
-    ],
-    trades:[],cash:[]
-  };
-  appData.accounts.push(acc);
-  if(!appData.tabOrder)appData.tabOrder=[];
-  appData.tabOrder.push(acc.id);
-  saveAll();
-}
-
 function initApp(){
-  _importHWC243();
   _chartCachePurgeOldKeys();
   _lastSync=new Date();
   renderTabBar();
