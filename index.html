@@ -313,6 +313,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .manage-add-row{padding-top:10px}
 .manage-empty{font-size:13px;color:var(--text2);padding:8px 0;font-style:italic}
 </style>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -2518,7 +2519,7 @@ var _adminPanel='accounts';
 function openManage(){activeTab='admin';_adminPanel='accounts';renderTabBar();render();}
 function switchAdminPanel(p){_adminPanel=p;renderAdminPage(document.getElementById('appContent'));}
 function renderAdminPage(el){
-  var navItems=[{id:'accounts',label:'Accounts'},{id:'lots',label:'Edit Lots'},{id:'import',label:'Import'}];
+  var navItems=[{id:'accounts',label:'Accounts'},{id:'lots',label:'Edit Lots'},{id:'import',label:'Import'},{id:'export',label:'Export'}];
   var navHTML='<div class="range-btns" style="margin-bottom:16px">';
   navItems.forEach(function(n){navHTML+='<button class="range-btn'+(n.id===_adminPanel?' active':'')+'" onclick="switchAdminPanel(\''+n.id+'\')">'+n.label+'</button>';});
   navHTML+='</div>';
@@ -2576,6 +2577,12 @@ function renderAdminPage(el){
       +'<div style="padding:16px">'
       +'<p style="font-size:11px;color:var(--text2);margin:0 0 14px;line-height:1.6">Import positions from a CSV or Excel file. Required columns: <strong>Name, Symbol, Exchange, Currency, Transaction Date, Units, Price</strong>.</p>'
       +'<button class="btn-ghost" onclick="openImport()" style="font-size:11px;padding:6px 14px">Import CSV / Excel…</button>'
+      +'</div></div>';
+  } else if(_adminPanel==='export'){
+    bodyHTML+='<div class="holdings-card"><div class="holdings-header"><span class="holdings-title">Export to Excel</span></div>'
+      +'<div style="padding:16px">'
+      +'<p style="font-size:11px;color:var(--text2);margin:0 0 14px;line-height:1.6">Downloads a full Excel backup with all accounts, holdings, and lot details.</p>'
+      +'<button class="btn-primary" onclick="doExport()" style="font-size:11px;padding:6px 16px">Download Excel Backup…</button>'
       +'</div></div>';
   }
   el.innerHTML='<div class="hero"><div><h1 class="hero-title">Admin</h1></div></div>'+navHTML+'<div style="margin-top:16px">'+bodyHTML+'</div>';
@@ -3179,6 +3186,66 @@ function doRefresh(){
     render();
     _syncChartToday(); // update chart endpoint with fresh prices instantly
   });
+}
+
+// ---- EXPORT ----
+function doExport(){
+  var wb=XLSX.utils.book_new();
+
+  // Sheet 1: Holdings (one row per lot)
+  var lotRows=[['Account','Category','Symbol','Name','Exchange','Currency','Lot Date','Shares','Buy Price','Commission','Purchase FX (CADUSD)','Current Price','Market Value','Stock P/L','Total P/L %']];
+  appData.tabOrder.forEach(function(accId){
+    var acc=getAccount(accId);if(!acc)return;
+    var cat=acc.categoryId?getCategory(acc.categoryId):null;
+    (acc.holdings||[]).forEach(function(h){
+      var c=calcHolding(h);
+      (h.lots||[]).forEach(function(l){
+        lotRows.push([
+          acc.name,
+          cat?cat.name:'',
+          h.symbol,
+          h.name||'',
+          h.exchange||'',
+          h.currency||'USD',
+          l.date||'',
+          l.shares||0,
+          l.price||0,
+          l.commission||0,
+          l.purchaseFx||l.fxRate||'',
+          h.currentPrice||0,
+          c.marketValue,
+          c.stockGain,
+          c.totalCost>0?Math.round(c.netPnL/c.totalCost*10000)/100:0
+        ]);
+      });
+    });
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(lotRows),'Lots');
+
+  // Sheet 2: Cash
+  var cashRows=[['Account','Category','Currency','Amount','Date','Note']];
+  appData.tabOrder.forEach(function(accId){
+    var acc=getAccount(accId);if(!acc)return;
+    var cat=acc.categoryId?getCategory(acc.categoryId):null;
+    (acc.cash||[]).forEach(function(e){
+      cashRows.push([acc.name,cat?cat.name:'',e.currency||'',e.amount||0,e.date||'',e.note||'']);
+    });
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(cashRows),'Cash');
+
+  // Sheet 3: Trades
+  var tradeRows=[['Account','Category','Symbol','Name','Type','Shares','Price','Date','Commission','P/L']];
+  appData.tabOrder.forEach(function(accId){
+    var acc=getAccount(accId);if(!acc)return;
+    var cat=acc.categoryId?getCategory(acc.categoryId):null;
+    (acc.trades||[]).forEach(function(t){
+      tradeRows.push([acc.name,cat?cat.name:'',t.symbol||'',t.name||'',t.type||'',t.shares||0,t.price||0,t.date||'',t.commission||0,t.pnl||'']);
+    });
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(tradeRows),'Trades');
+
+  var date=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb,'investments_backup_'+date+'.xlsx');
 }
 
 // ---- FIREBASE ----
