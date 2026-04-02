@@ -689,7 +689,11 @@ function buildDefaultData(){
 }
 
 var _lastSaveTime=0;
+var _appLoaded=false;
+var _syncRef=null;
 function loadAll(){
+  if(_appLoaded)return;
+  _appLoaded=true;
   var ref=firebase.database().ref('appData');
   ref.once('value',function(snap){
     var val=snap.val();
@@ -706,15 +710,22 @@ function loadAll(){
         }
       });
     }else{
-      appData=buildDefaultData();
-      saveAll();
+      // Firebase returned nothing — start with empty state. NEVER save defaults over real data.
+      appData={categories:[],catOrder:[],accounts:[],tabOrder:[]};
     }
     _setupRealtimeSync(ref);
+    initApp();
+  },function(err){
+    // Read failed (network/permissions) — do NOT overwrite anything
+    console.error('Firebase read error:',err);
+    if(!appData||!appData.accounts)appData={categories:[],catOrder:[],accounts:[],tabOrder:[]};
     initApp();
   });
 }
 function saveAll(){
   try{
+    // Safety guard: never write empty data to Firebase
+    if(!appData||!appData.accounts||appData.accounts.length===0)return;
     _lastSaveTime=Date.now();
     appData._savedAt=_lastSaveTime;
     firebase.database().ref('appData').set(appData);
@@ -3278,8 +3289,15 @@ function doLogin(){
       btn.disabled=false;btn.textContent='Sign In';
     });
 }
-function doLogout(){firebase.auth().signOut();}
+function doLogout(){
+  if(_syncRef){_syncRef.off();_syncRef=null;}
+  _appLoaded=false;
+  firebase.auth().signOut();
+}
 function _setupRealtimeSync(ref){
+  // Detach any previous listener to prevent duplicates
+  if(_syncRef){_syncRef.off();}
+  _syncRef=ref;
   ref.on('value',function(snap){
     // Ignore if we just saved (our own write bouncing back)
     if(Date.now()-_lastSaveTime<3000)return;
