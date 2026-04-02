@@ -2042,32 +2042,37 @@ function showPortBreakdown(canvasId,date){
 }
 
 // ---- PERIOD RETURNS WIDGET ----
-function _periodStart(daysAgo){
-  var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-daysAgo);return d.toISOString().slice(0,10);
-}
-function _ytdStart(){
-  return new Date().getFullYear()+'-01-01';
-}
-function _calcPeriodReturn(holdings,cutoff){
-  // cutoff: ISO date string — only lots with lot.date <= cutoff count
-  var totalCost=0,totalCurrentValue=0;
+// ---- PERIOD RETURNS (CAGR) ----
+// Each period shows the annualised return (CAGR) for lots held >= minDays.
+// Lots held less than minDays are excluded — so 5Y only counts positions
+// you actually held for 5 years. Weighted by current market value.
+function _calcCagr(holdings,minDays){
+  var now=new Date();now.setHours(0,0,0,0);
+  var totalMV=0,weightedCagr=0;
   holdings.forEach(function(h){
     var price=h.currentPrice;if(!price)return;
     var fx=getFxFactor(h);
     (h.lots||[]).forEach(function(l){
       if(!l.date||!l.shares||!l.price)return;
-      if(l.date>cutoff)return; // lot not held for this period
-      var lotCost=l.shares*l.price*(h.currency&&h.currency!=='USD'?(l.fxRate||getFxFactor(h)):1);
-      var lotValue=l.shares*price*fx;
-      totalCost+=lotCost;
-      totalCurrentValue+=lotValue;
+      var buyMs=new Date(l.date+'T12:00:00').getTime();
+      var daysHeld=(now.getTime()-buyMs)/86400000;
+      if(daysHeld<minDays)return;
+      var lotFx=(h.currency&&h.currency!=='USD')?(l.fxRate||getFxFactor(h)):1;
+      var costUSD=l.shares*l.price*lotFx;
+      var valuUSD=l.shares*price*fx;
+      if(costUSD<=0)return;
+      var totalReturn=valuUSD/costUSD;
+      var years=daysHeld/365;
+      // CAGR: annualised rate. For very short holds use simple annualisation.
+      var cagr=(Math.pow(totalReturn,1/years)-1)*100;
+      weightedCagr+=cagr*valuUSD;
+      totalMV+=valuUSD;
     });
   });
-  if(totalCost<=0)return null;
-  return(totalCurrentValue-totalCost)/totalCost*100;
+  if(totalMV<=0)return null;
+  return weightedCagr/totalMV;
 }
 function _calcDayReturn(holdings){
-  // Weighted average of dayChangePct by market value
   var totalMV=0,weightedSum=0;
   holdings.forEach(function(h){
     if(h.dayChangePct==null)return;
@@ -2079,28 +2084,28 @@ function _calcDayReturn(holdings){
   if(totalMV<=0)return null;
   return weightedSum/totalMV;
 }
-function _retRow(label,pct,maxAbs){
-  if(pct===null)return'<div class="ret-row"><div class="ret-lbl">'+label+'</div><div class="ret-none" style="grid-column:2/4">No lots</div></div>';
+function _retRow(label,pct,maxAbs,suffix){
+  if(pct===null)return'<div class="ret-row"><div class="ret-lbl">'+label+'</div><div class="ret-none" style="grid-column:2/4">—</div></div>';
   var cls=pct>=0?'pos':'neg';
   var barW=maxAbs>0?Math.min(Math.abs(pct)/maxAbs*100,100):0;
   var sign=pct>=0?'+':'';
-  return'<div class="ret-row"><div class="ret-lbl">'+label+'</div><div class="ret-track"><div class="ret-bar '+cls+'" style="width:'+barW.toFixed(1)+'%"></div></div><div class="ret-pct '+cls+'">'+sign+fmt(pct,1)+'%</div></div>';
+  return'<div class="ret-row"><div class="ret-lbl">'+label+'</div><div class="ret-track"><div class="ret-bar '+cls+'" style="width:'+barW.toFixed(1)+'%"></div></div><div class="ret-pct '+cls+'">'+sign+fmt(pct,1)+'%'+(suffix||'')+'</div></div>';
 }
 function perfHTML(holdings){
   if(!holdings.length)return'<div class="ret-card"><div class="ret-title">Returns</div><div class="empty-state" style="padding:20px">No data</div></div>';
-  var today=new Date().toISOString().slice(0,10);
+  var ytdDays=(Date.now()-new Date(new Date().getFullYear()+'-01-01T12:00:00').getTime())/86400000;
   var periods=[
-    {label:'1D', pct:_calcDayReturn(holdings)},
-    {label:'1W', pct:_calcPeriodReturn(holdings,_periodStart(7))},
-    {label:'1M', pct:_calcPeriodReturn(holdings,_periodStart(30))},
-    {label:'YTD', pct:_calcPeriodReturn(holdings,_ytdStart())},
-    {label:'12M', pct:_calcPeriodReturn(holdings,_periodStart(365))},
-    {label:'5Y',  pct:_calcPeriodReturn(holdings,_periodStart(1825))},
-    {label:'Max', pct:_calcPeriodReturn(holdings,'1900-01-01')}
+    {label:'1D',  pct:_calcDayReturn(holdings),        min:0,   suffix:''},
+    {label:'1W',  pct:_calcCagr(holdings,7),           min:7,   suffix:' ann.'},
+    {label:'1M',  pct:_calcCagr(holdings,30),          min:30,  suffix:' ann.'},
+    {label:'YTD', pct:_calcCagr(holdings,ytdDays),     min:ytdDays, suffix:' ann.'},
+    {label:'12M', pct:_calcCagr(holdings,365),         min:365, suffix:' ann.'},
+    {label:'5Y',  pct:_calcCagr(holdings,1825),        min:1825,suffix:' ann.'},
+    {label:'Max', pct:_calcCagr(holdings,0),           min:0,   suffix:' ann.'}
   ];
   var maxAbs=periods.reduce(function(m,p){return p.pct!==null?Math.max(m,Math.abs(p.pct)):m;},0.001);
-  var rows=periods.map(function(p){return _retRow(p.label,p.pct,maxAbs);}).join('');
-  return'<div class="ret-card"><div class="ret-title">Returns</div>'+rows+'</div>';
+  var rows=periods.map(function(p){return _retRow(p.label,p.pct,maxAbs,p.label==='1D'?'':p.suffix);}).join('');
+  return'<div class="ret-card"><div class="ret-title">Returns (annualised)</div>'+rows+'</div>';
 }
 
 // ---- TRADES VIEW ----
