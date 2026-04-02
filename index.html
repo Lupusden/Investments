@@ -1615,6 +1615,7 @@ async function initPortfolioChart(holdings,selRange){
     if(canvas2){if(msg2)msg2.style.display='none';canvas2.style.display='block';
       _drawPortChart(canvas2,'profChartTooltip',{dates:d.dates,values:d.profValues},selRange,_portOverlays);}
     _portRenderChartsGlobal=renderCharts;_portChartDataGlobal=data;
+    _onChartDataReady(d);
   }
 
   _portOverlays=[];
@@ -2042,36 +2043,31 @@ function showPortBreakdown(canvasId,date){
 }
 
 // ---- PERIOD RETURNS WIDGET ----
-// ---- PERIOD RETURNS (CAGR) ----
-// Each period shows the annualised return (CAGR) for lots held >= minDays.
-// Lots held less than minDays are excluded — so 5Y only counts positions
-// you actually held for 5 years. Weighted by current market value.
-function _calcCagr(holdings,minDays){
-  var now=new Date();now.setHours(0,0,0,0);
-  var totalMV=0,weightedCagr=0;
-  holdings.forEach(function(h){
-    var price=h.currentPrice;if(!price)return;
-    var fx=getFxFactor(h);
-    (h.lots||[]).forEach(function(l){
-      if(!l.date||!l.shares||!l.price)return;
-      var buyMs=new Date(l.date+'T12:00:00').getTime();
-      var daysHeld=(now.getTime()-buyMs)/86400000;
-      if(daysHeld<minDays)return;
-      var lotFx=(h.currency&&h.currency!=='USD')?(l.fxRate||getFxFactor(h)):1;
-      var costUSD=l.shares*l.price*lotFx;
-      var valuUSD=l.shares*price*fx;
-      if(costUSD<=0)return;
-      var totalReturn=valuUSD/costUSD;
-      var years=daysHeld/365;
-      // CAGR: annualised rate. For very short holds use simple annualisation.
-      var cagr=(Math.pow(totalReturn,1/years)-1)*100;
-      weightedCagr+=cagr*valuUSD;
-      totalMV+=valuUSD;
-    });
-  });
-  if(totalMV<=0)return null;
-  return weightedCagr/totalMV;
+// ---- PERIOD RETURNS ----
+// Uses actual historical portfolio values from chart data (same source as portfolio chart).
+// No extra API calls — data is already fetched and cached by initPortfolioChart.
+var _portHistFull=null; // {dates:[], portValues:[]} — set by _onChartDataReady
+var _retHoldings=[];
+
+function _onChartDataReady(data){
+  _portHistFull=data;
+  var card=document.getElementById('retCard');
+  if(card&&_retHoldings.length)card.innerHTML=_buildReturnsInner(_retHoldings);
 }
+
+function _getPeriodRet(daysAgo,ytd){
+  if(!_portHistFull)return null;
+  var dates=_portHistFull.dates,vals=_portHistFull.portValues;
+  if(!dates||dates.length<2)return null;
+  var cutoff=ytd?(new Date().getFullYear()+'-01-01'):new Date(Date.now()-daysAgo*86400000).toISOString().slice(0,10);
+  // Find last date on or before cutoff
+  var startVal=null;
+  for(var i=0;i<dates.length;i++){if(dates[i]<=cutoff)startVal=vals[i];}
+  if(startVal===null||startVal<=0)return null;
+  var endVal=vals[vals.length-1];
+  return(endVal-startVal)/startVal*100;
+}
+
 function _calcDayReturn(holdings){
   var totalMV=0,weightedSum=0;
   holdings.forEach(function(h){
@@ -2084,28 +2080,33 @@ function _calcDayReturn(holdings){
   if(totalMV<=0)return null;
   return weightedSum/totalMV;
 }
-function _retRow(label,pct,maxAbs,suffix){
+
+function _retRow(label,pct,maxAbs){
   if(pct===null)return'<div class="ret-row"><div class="ret-lbl">'+label+'</div><div class="ret-none" style="grid-column:2/4">—</div></div>';
   var cls=pct>=0?'pos':'neg';
   var barW=maxAbs>0?Math.min(Math.abs(pct)/maxAbs*100,100):0;
   var sign=pct>=0?'+':'';
-  return'<div class="ret-row"><div class="ret-lbl">'+label+'</div><div class="ret-track"><div class="ret-bar '+cls+'" style="width:'+barW.toFixed(1)+'%"></div></div><div class="ret-pct '+cls+'">'+sign+fmt(pct,1)+'%'+(suffix||'')+'</div></div>';
+  return'<div class="ret-row"><div class="ret-lbl">'+label+'</div><div class="ret-track"><div class="ret-bar '+cls+'" style="width:'+barW.toFixed(1)+'%"></div></div><div class="ret-pct '+cls+'">'+sign+fmt(pct,1)+'%</div></div>';
 }
-function perfHTML(holdings){
-  if(!holdings.length)return'<div class="ret-card"><div class="ret-title">Returns</div><div class="empty-state" style="padding:20px">No data</div></div>';
-  var ytdDays=(Date.now()-new Date(new Date().getFullYear()+'-01-01T12:00:00').getTime())/86400000;
+
+function _buildReturnsInner(holdings){
   var periods=[
-    {label:'1D',  pct:_calcDayReturn(holdings),        min:0,   suffix:''},
-    {label:'1W',  pct:_calcCagr(holdings,7),           min:7,   suffix:' ann.'},
-    {label:'1M',  pct:_calcCagr(holdings,30),          min:30,  suffix:' ann.'},
-    {label:'YTD', pct:_calcCagr(holdings,ytdDays),     min:ytdDays, suffix:' ann.'},
-    {label:'12M', pct:_calcCagr(holdings,365),         min:365, suffix:' ann.'},
-    {label:'5Y',  pct:_calcCagr(holdings,1825),        min:1825,suffix:' ann.'},
-    {label:'Max', pct:_calcCagr(holdings,0),           min:0,   suffix:' ann.'}
+    {label:'1D',  pct:_calcDayReturn(holdings)},
+    {label:'1W',  pct:_getPeriodRet(7)},
+    {label:'1M',  pct:_getPeriodRet(30)},
+    {label:'YTD', pct:_getPeriodRet(0,true)},
+    {label:'12M', pct:_getPeriodRet(365)},
+    {label:'5Y',  pct:_getPeriodRet(1825)},
+    {label:'Max', pct:_getPeriodRet(36500)}
   ];
   var maxAbs=periods.reduce(function(m,p){return p.pct!==null?Math.max(m,Math.abs(p.pct)):m;},0.001);
-  var rows=periods.map(function(p){return _retRow(p.label,p.pct,maxAbs,p.label==='1D'?'':p.suffix);}).join('');
-  return'<div class="ret-card"><div class="ret-title">Returns (annualised)</div>'+rows+'</div>';
+  return'<div class="ret-title">Returns</div>'+periods.map(function(p){return _retRow(p.label,p.pct,maxAbs);}).join('');
+}
+
+function perfHTML(holdings){
+  _retHoldings=holdings;
+  if(!holdings.length)return'<div class="ret-card" id="retCard"><div class="ret-title">Returns</div><div class="empty-state" style="padding:20px">No data</div></div>';
+  return'<div class="ret-card" id="retCard">'+_buildReturnsInner(holdings)+'</div>';
 }
 
 // ---- TRADES VIEW ----
