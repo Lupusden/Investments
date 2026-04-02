@@ -1177,7 +1177,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
     var _pvAggCad=_portfolioCurrency==='CAD'?_aggCad:(_aggCad*(_cadUsdRate||0));
     totMV+=_pvAggUsd+_pvAggCad;totTC+=_pvAggUsd+_pvAggCad;
     var _acctBlank='<div class="cell" style="text-align:left"></div>';
-    cashRR='<div class="holding-row-wrap"><div class="holding-row" style="'+_cs+'">'
+    cashRR='<div class="holding-row-wrap"><div class="holding-row rollup" style="'+_cs+'">'
       +'<div class="cell cell-sym"><span class="sym">🇺🇸 USD</span></div>'
       +_bd
       +'<div class="cell cell-name-col">USD Cash</div>'
@@ -1189,7 +1189,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
       +_bd+_bd+_bd+_bd+_bd+_bd+_bd
       +'<div class="cell cell-arrow"></div>'
       +'</div></div>';
-    cashRR+='<div class="holding-row-wrap"><div class="holding-row" style="'+_cs+'">'
+    cashRR+='<div class="holding-row-wrap"><div class="holding-row rollup" style="'+_cs+'">'
       +'<div class="cell cell-sym"><span class="sym">🇨🇦 CAD</span></div>'
       +_bd
       +'<div class="cell cell-name-col">CAD Cash</div>'
