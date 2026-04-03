@@ -742,24 +742,32 @@ function _setSaveStatus(msg,color){
   var el=document.getElementById('syncTime');
   if(el){el.textContent=msg;el.style.color=color||'';}
 }
+function _sanitiseForFirebase(obj){
+  // Firebase rejects: undefined values, keys containing . # $ [ ] /
+  return JSON.parse(JSON.stringify(obj,function(k,v){
+    if(v===undefined||v===null)return null;
+    return v;
+  }));
+}
 function saveAll(){
   try{
     if(!appData||!appData.accounts||appData.accounts.length===0)return;
     _lastSaveTime=Date.now();
     appData._savedAt=_lastSaveTime;
-    var p=firebase.database().ref('appData').set(appData);
+    var clean=_sanitiseForFirebase(appData);
+    var p=firebase.database().ref('appData').set(clean);
     if(p&&typeof p.then==='function'){
       p.then(function(){
         _setSaveStatus('Saved','var(--green-text)');
         setTimeout(function(){updateSyncDisplay();var el=document.getElementById('syncTime');if(el)el.style.color='';},1500);
       }).catch(function(e){
-        console.error('Save failed:',e);
-        _setSaveStatus('\u26a0 Save failed \u2014 check connection','var(--red-text)');
+        console.error('Save failed:',e.code,e.message);
+        _setSaveStatus('\u26a0 Save failed: '+e.message,'var(--red-text)');
       });
     }
   }catch(e){
     console.error('saveAll error:',e);
-    _setSaveStatus('\u26a0 Save failed \u2014 check connection','var(--red-text)');
+    _setSaveStatus('\u26a0 Save error: '+e.message,'var(--red-text)');
   }
 }
 
@@ -2424,7 +2432,7 @@ function saveNewPosition(){
   var lotFxRate=fxUSDCAD>0?(1/fxUSDCAD):(_selCurrency!=='USD'?resolvedFx:1); // store as CADUSD
   var holdingFxToUSD=_selCurrency!=='USD'?resolvedFx:1;
   if(h){h.lots.push({id:mkUid(),date:date,shares:shares,price:price,commission:comm,fxRate:lotFxRate,purchaseFx:_cadUsdRate});if(cp)h.currentPrice=cp;if(dcp)h.dayChangePct=dcp;if(manualPrice)h.manualPrice=true;}
-  else{acc.holdings.push({id:'h'+mkUid(),symbol:sym,name:name||sym,flag:flag,exchange:exchange,currency:_selCurrency,fxRateToUSD:holdingFxToUSD,currentPrice:cp,dayChangePct:dcp,manualPrice:manualPrice||undefined,lots:[{id:mkUid(),date:date,shares:shares,price:price,commission:comm,fxRate:lotFxRate,purchaseFx:_cadUsdRate}]});}
+  else{var newH={id:'h'+mkUid(),symbol:sym,name:name||sym,flag:flag,exchange:exchange,currency:_selCurrency,fxRateToUSD:holdingFxToUSD,currentPrice:cp||0,dayChangePct:dcp||0,lots:[{id:mkUid(),date:date,shares:shares,price:price,commission:comm,fxRate:lotFxRate,purchaseFx:_cadUsdRate||0}]};if(manualPrice)newH.manualPrice=true;acc.holdings.push(newH);}
   acc.trades.push({id:mkUid(),symbol:sym,name:name||sym,flag:flag,type:'buy',shares:shares,price:price,date:date,commission:comm,pnl:null});
   saveAll();closeModal('modalAddPos');render();
 }
