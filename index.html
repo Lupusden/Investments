@@ -771,11 +771,11 @@ function saveAll(){
   }
 }
 
-function fmt(n,dec){if(dec===undefined)dec=2;if(n==null||isNaN(n))return'—';return new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(n);}
-function fmtC(n,dec){if(dec===undefined)dec=0;if(n==null||isNaN(n))return'—';var abs=Math.abs(n);var s=new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(abs);return(n<0?'-':'')+s;}
+function fmt(n,dec){if(dec===undefined)dec=2;if(n==null||isNaN(n))return'';return new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(n);}
+function fmtC(n,dec){if(dec===undefined)dec=0;if(n==null||isNaN(n))return'';var abs=Math.abs(n);var s=new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(abs);return(n<0?'-':'')+s;}
 var CCY_SYMS={'USD':'','CAD':'','GBP':'£','EUR':'€','JPY':'¥','AUD':'','HKD':'','SGD':'','CNY':'¥','INR':'₹','BRL':'','CHF':'Fr','KRW':'₩','SEK':'kr','NOK':'kr','DKK':'kr','NZD':'','ZAR':'R','TRY':'₺','ILS':'₪','MXN':''};
-function fmtNative(n,currency,dec){if(dec===undefined)dec=0;if(n==null||isNaN(n))return'—';var abs=Math.abs(n);var s=new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(abs);var sym=CCY_SYMS[currency||'USD']||'';return(n<0?'-':'')+sym+s;}
-function fmtPct(n){if(n==null||isNaN(n))return'—';return(n>=0?'+':'')+fmt(n,1)+'%';}
+function fmtNative(n,currency,dec){if(dec===undefined)dec=0;if(n==null||isNaN(n))return'';var abs=Math.abs(n);var s=new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(abs);var sym=CCY_SYMS[currency||'USD']||'';return(n<0?'-':'')+sym+s;}
+function fmtPct(n){if(n==null||isNaN(n))return'';return(n>=0?'+':'')+fmt(n,1)+'%';}
 function cc(n){return n>0?'pos':n<0?'neg':'';}
 function today(){return new Date().toISOString().slice(0,10);}
 function getAccount(id){return appData.accounts.find(function(a){return a.id==id;});}
@@ -851,7 +851,7 @@ function getCashItems(accs){
 function cashEntriesPanel(acc,ccy,isOpen){
   var entries=(acc.cash||[]).filter(function(e){return e.currency===ccy;}).sort(function(a,b){return a.date<b.date?-1:1;});
   var rows=entries.map(function(e){
-    return'<div class="cash-lot-row"><div class="lot-val">'+fmtDate(e.date)+'</div><div class="lot-val">'+fmt(e.amount||0,0)+'</div><div class="lot-val">'+esc(ccy)+'</div><div class="lot-val" style="color:var(--text2)">'+esc(e.note||'—')+'</div><div class="lot-actions"><button class="btn-ghost" onclick="openEditCashEntry('+acc.id+',\''+e.id+'\')">Edit</button><button class="btn-ghost danger" onclick="deleteCashEntry('+acc.id+',\''+e.id+'\')">Delete</button></div></div>';
+    return'<div class="cash-lot-row"><div class="lot-val">'+fmtDate(e.date)+'</div><div class="lot-val">'+fmt(e.amount||0,0)+'</div><div class="lot-val">'+esc(ccy)+'</div><div class="lot-val" style="color:var(--text2)">'+esc(e.note||'')+'</div><div class="lot-actions"><button class="btn-ghost" onclick="openEditCashEntry('+acc.id+',\''+e.id+'\')">Edit</button><button class="btn-ghost danger" onclick="deleteCashEntry('+acc.id+',\''+e.id+'\')">Delete</button></div></div>';
   }).join('');
   var panelId='cash_panel_'+ccy+'_'+acc.id;
   return'<div class="cash-panel'+(isOpen?' open':'')+'" id="'+panelId+'"><div class="cash-lot-head"><span>Date</span><span>Amount</span><span>Currency</span><span>Note</span><span></span></div>'+rows+'<div class="add-lot-row"><button class="btn-ghost" onclick="openAddCashEntry('+acc.id+',\''+ccy+'\')">+ Add '+ccy+' Cash</button></div></div>';
@@ -1166,8 +1166,8 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
     r+='<div class="cell '+cc(c.dailyPnL)+'">'+fmtC(c.dailyPnL)+'</div>';
     var hCcyR=h.currency||'USD';var hasFxR=(_portfolioCurrency==='USD'&&hCcyR==='CAD')||(_portfolioCurrency==='CAD'&&hCcyR==='USD');
     r+='<div class="cell '+cc(c.stockGain)+'">'+fmtC(c.stockGain)+'</div>';
-    r+='<div class="cell '+(hasFxR&&c.fxGain!==0?cc(c.fxGain):'')+'">'+( hasFxR?fmtC(c.fxGain):'<span style="color:var(--text2)">—</span>')+'</div>';
-    r+='<div class="cell '+(c.dividendTotal>0?cc(c.dividendTotal):'')+'">'+((c.dividendTotal||0)>0?fmtC(c.dividendTotal):'<span style="color:var(--text2)">—</span>')+'</div>';
+    r+='<div class="cell '+(hasFxR&&c.fxGain!==0?cc(c.fxGain):'')+'">'+( hasFxR?fmtC(c.fxGain):'')+'</div>';
+    r+='<div class="cell '+(c.dividendTotal>0?cc(c.dividendTotal):'')+'">'+((c.dividendTotal||0)>0?fmtC(c.dividendTotal):'')+'</div>';
     var totPnLRow=c.netPnL+c.dividendTotal;var totPnLRowPct=c.totalCost>0?(totPnLRow/c.totalCost*100):0;
     r+='<div class="cell '+cc(totPnLRow)+'">'+fmtC(totPnLRow)+'</div>';
     r+='<div class="cell '+cc(totPnLRowPct)+'">'+fmtPct(totPnLRowPct)+'</div>';
@@ -1179,7 +1179,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
   }).join('');
   // Cash rows (all views)
   var cashRR='';
-  var _bd='<div class="cell"><span style="color:var(--text2)">—</span></div>';
+  var _bd='<div class="cell"></div>';
   var _cs='border-top:1px solid var(--border-light);cursor:pointer';
   function _cashRows(a,isRollupRow){
     if(!Array.isArray(a.cash))a.cash=[];
@@ -1338,8 +1338,8 @@ function lotsHTML(h,acc,isOpen){
   var rows=sorted.map(function(l){
     var nativePrice=fmtNative(l.price,hCcy);
     var fxToUSD=l.fxRate||(hCcy==='CAD'?_cadUsdRate:(h.fxRateToUSD||1));
-    var fxDisp=fxToUSD>0?(1/fxToUSD).toFixed(4):'—';
-    var usdEquiv=fxToUSD>0?Math.round(l.price*fxToUSD).toLocaleString('en-US'):'—';
+    var fxDisp=fxToUSD>0?(1/fxToUSD).toFixed(4):'';
+    var usdEquiv=fxToUSD>0?Math.round(l.price*fxToUSD).toLocaleString('en-US'):'';
     var nativeComm=fmtNative(l.commission||0,hCcy);
     var fxCells=isNonUSD?'<div class="lot-val">'+fxDisp+'</div><div class="lot-val">'+usdEquiv+'</div>':'';
     var invested=(l.shares||0)*(l.price||0)+(l.commission||0);
@@ -1535,7 +1535,7 @@ function _chartCachePurgeOldKeys(){
 }
 var _portRangeCfg={'1W':{range:'5d',interval:'1d'},'1M':{range:'1mo',interval:'1d'},'6M':{range:'6mo',interval:'1d'},'1Y':{range:'1y',interval:'1d'},'5Y':{range:'5y',interval:'1wk'},'Max':{range:'max',interval:'1mo'}};
 var _PMONS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-function fmtDate(dateStr){if(!dateStr)return'—';var d=new Date(dateStr+'T12:00:00');return d.getDate()+_PMONS[d.getMonth()]+"'"+String(d.getFullYear()).slice(2);}
+function fmtDate(dateStr){if(!dateStr)return'';var d=new Date(dateStr+'T12:00:00');return d.getDate()+_PMONS[d.getMonth()]+"'"+String(d.getFullYear()).slice(2);}
 
 // Race all proxies concurrently — resolves on first success
 function portFetch(url){
@@ -2108,7 +2108,7 @@ function _calcDayReturn(holdings){
 }
 
 function _retRow(label,pct,maxAbs){
-  if(pct===null)return'<div class="ret-row"><div class="ret-lbl">'+label+'</div><div class="ret-none" style="grid-column:2/4">—</div></div>';
+  if(pct===null)return'<div class="ret-row"><div class="ret-lbl">'+label+'</div><div style="grid-column:2/4"></div></div>';
   var cls=pct>=0?'pos':'neg';
   var barW=maxAbs>0?Math.min(Math.abs(pct)/maxAbs*100,100):0;
   var sign=pct>=0?'+':'';
@@ -2154,14 +2154,14 @@ function renderTrades(el,acc){
     var bc=g.trades.filter(function(t){return t.type==='buy';}).length;
     var sc=g.trades.filter(function(t){return t.type==='sell';}).length;
     var tRows=g.trades.map(function(t){
-      var pStr=t.pnl!=null?'<span class="'+cc(t.pnl)+'">'+fmtC(t.pnl)+'</span>':'—';
+      var pStr=t.pnl!=null?'<span class="'+cc(t.pnl)+'">'+fmtC(t.pnl)+'</span>':'';
       return'<div class="trade-row"><div>'+esc(t.date)+'</div><div><span class="trade-badge '+(t.type==='buy'?'buy-badge':'sell-badge')+'">'+t.type.toUpperCase()+'</span></div><div>'+fmt(t.shares,3)+'</div><div>'+fmtC(t.price)+'</div><div>'+fmtC(t.shares*t.price)+'</div><div>'+pStr+'</div><div style="display:flex;gap:6px"><button class="btn-ghost" onclick="openEditTrade('+acc.id+',\''+t.id+'\')">Edit</button><button class="btn-ghost danger" onclick="confirmDeleteTrade('+acc.id+',\''+t.id+'\')">Delete</button></div></div>';
     }).join('');
     return'<div class="trades-group"><div class="trades-group-header" onclick="toggleTradeGroup(\''+sym+'\')"><span class="tg-sym">'+(g.flag?esc(g.flag)+' ':'')+esc(sym)+'</span><span class="tg-meta">'+esc(g.name)+' &bull; '+bc+' buy'+(bc!==1?'s':'')+' / '+sc+' sell'+(sc!==1?'s':'')+'</span><span class="tg-arrow'+(isOpen?' open':'')+'">&#9658;</span></div><div class="trades-list'+(isOpen?' open':'')+'" id="tg_'+sym+'"><div class="trade-row trade-row-head"><div>Date</div><div>Type</div><div>Shares</div><div>Price</div><div>Total</div><div>P&amp;L</div><div>Actions</div></div>'+tRows+'</div></div>';
   }).join('');
   el.innerHTML='<div class="hero">'+heroCat+'<h1 class="hero-title">'+esc(acc.name)+'</h1></div>'+
     '<div class="trades-wrap">'+
-    '<div class="trades-stats">'+sCard('Realized P&amp;L',fmtC(rPnL),'',rPnL>=0?'var(--green-text)':'var(--red-text)')+sCard('Total Proceeds',fmtC(tProc),'','var(--blue)')+sCard('Win Rate',fmt(wr,1)+'%',wins+' of '+sells.length+' trades','var(--orange)')+sCard('Best Trade',best?fmtC(best.pnl||0):'—',best?esc(best.symbol):'','var(--green-text)')+'</div>'+
+    '<div class="trades-stats">'+sCard('Realized P&amp;L',fmtC(rPnL),'',rPnL>=0?'var(--green-text)':'var(--red-text)')+sCard('Total Proceeds',fmtC(tProc),'','var(--blue)')+sCard('Win Rate',fmt(wr,1)+'%',wins+' of '+sells.length+' trades','var(--orange)')+sCard('Best Trade',best?fmtC(best.pnl||0):'',best?esc(best.symbol):'','var(--green-text)')+'</div>'+
     '<div class="trades-filters"><button class="filter-btn'+(tradeFilter==='all'?' active':'')+'" onclick="setTradeFilter(\'all\')">All</button><button class="filter-btn'+(tradeFilter==='buys'?' active':'')+'" onclick="setTradeFilter(\'buys\')">Buys</button><button class="filter-btn'+(tradeFilter==='sells'?' active':'')+'" onclick="setTradeFilter(\'sells\')">Sells</button></div>'+
     (gHTML||'<div class="empty-state">No trades yet.</div>')+
     '</div>';
