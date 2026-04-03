@@ -862,6 +862,7 @@ function saveCashEntry(){
   var note=document.getElementById('cashNoteInput').value;
   if(_cashCtx.entryId){var e=acc.cash.find(function(x){return x.id===_cashCtx.entryId;});if(e){e.currency=ccy;e.amount=amount;e.date=date;e.note=note;}}
   else{acc.cash.push({id:mkUid(),currency:ccy,amount:amount,date:date,note:note});}
+  _expandedCash[ccy+'_'+_cashCtx.accId]=false;
   saveAll();closeModal('modalCashEntry');render();
 }
 function deleteCashEntry(accId,entryId){
