@@ -366,7 +366,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
       </div>
       <div class="pos-status" id="posStatus"></div>
       <div style="margin:4px 0 2px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="posManualPrice" onchange="toggleManualCcy()" style="cursor:pointer"> Manual price — no live feed (current price = purchase price)</label>
+        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="posManualPrice" onchange="toggleManualCcy()" style="cursor:pointer"> Manual price — no live feed</label>
         <div id="posManualCcyRow" style="display:none;align-items:center;gap:6px">
           <span style="font-size:12px;color:var(--text2)">Currency:</span>
           <button type="button" id="posManualCcyUSD" class="ccy-btn active" onclick="setManualCcy('USD')" style="font-size:11px;padding:2px 8px">USD</button>
@@ -817,7 +817,7 @@ function calcHolding(h){
   }
   var avg=ts>0?tc/ts:0;
   var fx=getFxFactor(h);
-  var effectivePrice=h.manualPrice?avg/fx:(h.currentPrice||0);
+  var effectivePrice=h.manualPrice?(h.currentPrice||avg/fx):(h.currentPrice||0);
   var mv=ts*effectivePrice*fx;
   var npnl=mv-tc,npnlp=tc>0?(npnl/tc*100):0;
   var dp=h.dayChangePct||0;
@@ -1355,7 +1355,8 @@ function lotsHTML(h,acc,isOpen){
   var totalRow='<div class="lot-row" style="border-top:1px solid var(--border);margin-top:2px;font-weight:600"><div class="lot-val" style="color:var(--text2);font-weight:400">Total</div><div class="lot-val" style="font-weight:600">'+fmt(totShares,h.lots.some(function(l){return(l.shares||0)%1>0.0001;})?5:0)+'</div><div class="lot-val"></div>'+fxTotCols+'<div class="lot-val"></div><div class="lot-val" style="font-weight:600;color:var(--blue)">'+totInvestedDisp+'</div><div class="lot-actions"></div></div>';
   var buyPriceHdr='Buy Price'+(isNonUSD?' ('+hCcy+')':'');
   var fxHdrs=isNonUSD?'<span>FX Rate</span><span>USD Equiv</span>':'';
-  return'<div class="'+panelClass+'" id="lots_'+h.id+'"><div class="lots-head">'+hdr('Buy Date','date')+hdr('Amount','shares')+hdr(buyPriceHdr,'price')+fxHdrs+hdr('Commission','commission')+'<span>Invested</span><span>Actions</span></div>'+rows+(sorted.length>1?totalRow:'')+'<div class="add-lot-row"><button class="btn-ghost" onclick="openAddLot('+acc.id+',\''+h.id+'\')">+ Add Lot</button></div></div>';
+  var manualPriceRow=h.manualPrice?'<div class="add-lot-row" style="gap:8px"><span style="font-size:11px;color:var(--text2)">Current Price ('+hCcy+'):</span><input type="number" id="manualPriceInput_'+h.id+'" step="0.01" placeholder="'+(h.currentPrice||'')+'" style="width:90px;font-size:11px;padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg)"><button class="btn-ghost" style="padding:2px 8px;font-size:11px" onclick="updateManualPrice(\''+h.id+'\','+acc.id+')">Update</button></div>':'';
+  return'<div class="'+panelClass+'" id="lots_'+h.id+'"><div class="lots-head">'+hdr('Buy Date','date')+hdr('Amount','shares')+hdr(buyPriceHdr,'price')+fxHdrs+hdr('Commission','commission')+'<span>Invested</span><span>Actions</span></div>'+rows+(sorted.length>1?totalRow:'')+manualPriceRow+'<div class="add-lot-row"><button class="btn-ghost" onclick="openAddLot('+acc.id+',\''+h.id+'\')">+ Add Lot</button></div></div>';
 }
 
 function bindHoldingClicks(container,isRollup){
@@ -2206,6 +2207,16 @@ var EXCH_CCY={'TOR':'CAD','CVE':'CAD','TSX':'CAD','LSE':'GBP','ASX':'AUD','TYO':
 function inferCurrency(exchange,currency){return currency||EXCH_CCY[exchange||'']||'USD';}
 var _symTimer=null,_symItems=[],_symIdx=-1,_selCurrency='USD',_selFxRate=1;
 function toggleManualCcy(){var row=document.getElementById('posManualCcyRow');if(row)row.style.display=document.getElementById('posManualPrice').checked?'flex':'none';}
+function updateManualPrice(hid,accId){
+  var inp=document.getElementById('manualPriceInput_'+hid);
+  if(!inp)return;
+  var val=parseFloat(inp.value);
+  if(!val||val<=0)return;
+  var acc=getAccount(accId);if(!acc)return;
+  var h=acc.holdings.find(function(hh){return hh.id===hid;});if(!h)return;
+  h.currentPrice=val;
+  saveAll();render();
+}
 function setManualCcy(c){_selCurrency=c;['USD','CAD'].forEach(function(x){var b=document.getElementById('posManualCcy'+x);if(b)b.classList.toggle('active',x===c);});}
 var _portfolioCurrency='USD',_cadUsdRate=0.72;
 function getFxFactor(h){
