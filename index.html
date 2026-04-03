@@ -65,7 +65,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .tab-add{display:inline-flex;align-items:center;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:500;color:var(--text2);cursor:pointer;transition:background .18s,color .18s;border:none;background:transparent;flex-shrink:0}
 .tab-add:hover{background:rgba(0,0,0,.04);color:var(--blue)}
 .tab-rename-input{background:transparent;border:none;outline:none;font-family:inherit;font-size:13.5px;font-weight:500;color:inherit;width:80px;min-width:40px}
-.nav-pills-bar{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.nav-pills-bar{display:flex;gap:4px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
 .sub-tab{padding:1px 8px;border-radius:var(--radius-pill);font-size:9.5px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;border:1px solid var(--border-light);background:transparent;white-space:nowrap;flex-shrink:0;line-height:1.7}
 .sub-tab:hover{color:var(--text);border-color:var(--border)}
 .sub-tab.active{color:var(--blue);border-color:rgba(0,113,227,.4);background:rgba(0,113,227,.07);font-weight:600}
@@ -345,7 +345,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
     <button id="loginBtn" onclick="doLogin()" style="width:100%;padding:12px;background:#0071e3;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;">Sign In</button>
   </div>
 </div>
-<nav class="nav"><div class="nav-row-top"><div class="nav-brand-name">Investment Tracker</div><div class="nav-tabs" id="tabBar"></div><span class="tab" onclick="doLogout()">Sign out</span></div><div class="nav-row-bottom"><div class="nav-sync"><button class="nav-refresh-btn" onclick="doRefresh()" title="Refresh">↻</button><span class="nav-sync-time" id="syncTime"></span><div class="nav-zoom-ctrl"><input class="nav-zoom-slider" id="zoomSlider" type="range" min="0" max="16" step="1" value="4" oninput="var el=document.getElementById('zoomPct');if(el)el.textContent=Math.round(_fontScales[this.value]*100)+'%'" onchange="setZoom(this.value)"><span class="nav-zoom-pct" id="zoomPct">100%</span></div></div><div id="subTabBar" class="nav-pills-bar"></div><span class="tab" style="visibility:hidden;pointer-events:none">Sign out</span></div></nav>
+<nav class="nav"><div class="nav-row-top"><div class="nav-brand-name">Investment Tracker</div><div class="nav-tabs" id="tabBar"></div><div style="display:flex;align-items:center;gap:4px"><span id="adminTab" class="tab tab-primary" onclick="activeTab='admin';renderTabBar();renderAccountBar();render()">Admin</span><span class="tab" onclick="doLogout()">Sign out</span></div></div><div class="nav-row-bottom"><div class="nav-sync"><button class="nav-refresh-btn" onclick="doRefresh()" title="Refresh">↻</button><span class="nav-sync-time" id="syncTime"></span><div class="nav-zoom-ctrl"><input class="nav-zoom-slider" id="zoomSlider" type="range" min="0" max="16" step="1" value="4" oninput="var el=document.getElementById('zoomPct');if(el)el.textContent=Math.round(_fontScales[this.value]*100)+'%'" onchange="setZoom(this.value)"><span class="nav-zoom-pct" id="zoomPct">100%</span></div></div><div id="subTabBar" class="nav-pills-bar"></div><div style="display:flex;align-items:center;gap:4px;visibility:hidden;pointer-events:none"><span class="tab">Admin</span><span class="tab">Sign out</span></div></div></nav>
 
 <div class="wrapper"><div id="appContent"></div></div>
 
@@ -887,11 +887,9 @@ function renderTabBar(){
     bar.appendChild(mkDivider());
     var catTab=mkTab('cat_'+catId,cat.name,false,true,false,catId);catTab.classList.add('tab-primary');bar.appendChild(catTab);
   }
-  bar.appendChild(mkDivider());
-  var adminBtn=document.createElement('div');
-  adminBtn.className='tab tab-primary'+(activeTab==='admin'?' active':'');adminBtn.textContent='Admin';
-  adminBtn.addEventListener('click',function(){activeTab='admin';renderTabBar();renderAccountBar();render();});
-  bar.appendChild(adminBtn);
+  // Admin goes in the right column, not tabBar
+  var adminEl=document.getElementById('adminTab');
+  if(adminEl){adminEl.className='tab tab-primary'+(activeTab==='admin'?' active':'');}
   renderAccountBar();
 }
 
