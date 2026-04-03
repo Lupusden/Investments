@@ -51,6 +51,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .nav-zoom-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:12px;height:12px;border-radius:50%;background:var(--blue);cursor:pointer;border:none}
 .nav-zoom-slider::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--blue);cursor:pointer;border:none}
 .nav-sync-time{font-size:10px;color:var(--text2);white-space:nowrap}
+.nav-sync-time.saved-pill{background:var(--green-text);color:#fff;padding:2px 8px;border-radius:20px;font-weight:600;font-size:10px;}
 .nav-tabs{display:flex;align-items:center;gap:1px;overflow-x:auto;scrollbar-width:none;justify-content:flex-end}
 .nav-tabs::-webkit-scrollbar{display:none}
 .tab-divider{display:none}
@@ -740,7 +741,7 @@ function loadAll(){
 }
 function _setSaveStatus(msg,color){
   var el=document.getElementById('syncTime');
-  if(el){el.textContent=msg;el.style.color=color||'';}
+  if(el){el.textContent=msg;el.style.color=color||'';el.classList.remove('saved-pill');}
 }
 function _sanitiseForFirebase(obj){
   // Firebase rejects: undefined values, keys containing . # $ [ ] /
@@ -758,8 +759,9 @@ function saveAll(){
     var p=firebase.database().ref('appData').set(clean);
     if(p&&typeof p.then==='function'){
       p.then(function(){
-        _setSaveStatus('Saved','var(--green-text)');
-        setTimeout(function(){updateSyncDisplay();var el=document.getElementById('syncTime');if(el)el.style.color='';},1500);
+        var el=document.getElementById('syncTime');
+        if(el){el.textContent='Saved';el.classList.add('saved-pill');el.style.color='';}
+        setTimeout(function(){if(el)el.classList.remove('saved-pill');updateSyncDisplay();},5000);
       }).catch(function(e){
         console.error('Save failed:',e.code,e.message);
         _setSaveStatus('\u26a0 Save failed: '+e.message,'var(--red-text)');
