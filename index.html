@@ -3287,6 +3287,7 @@ function doRefresh(){
   var btn=document.querySelector('.nav-refresh-btn');
   if(btn)btn.disabled=true;
   expandedHoldings={};
+  _expandedCash={};
   // Keep chart cache — only today's price endpoint changes, not historical data
   fetchCadRate();fetchAllPrices().finally(function(){
     if(btn)btn.disabled=false;
