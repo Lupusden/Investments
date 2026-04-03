@@ -738,14 +738,21 @@ function loadAll(){
     initApp();
   });
 }
+function _setSaveStatus(msg,color){
+  var el=document.getElementById('syncTime');
+  if(el){el.textContent=msg;el.style.color=color||'';}
+}
 function saveAll(){
-  try{
-    // Safety guard: never write empty data to Firebase
-    if(!appData||!appData.accounts||appData.accounts.length===0)return;
-    _lastSaveTime=Date.now();
-    appData._savedAt=_lastSaveTime;
-    firebase.database().ref('appData').set(appData);
-  }catch(e){}
+  if(!appData||!appData.accounts||appData.accounts.length===0)return;
+  _lastSaveTime=Date.now();
+  appData._savedAt=_lastSaveTime;
+  firebase.database().ref('appData').set(appData).then(function(){
+    _setSaveStatus('Saved','var(--green-text)');
+    setTimeout(function(){updateSyncDisplay();var el=document.getElementById('syncTime');if(el)el.style.color='';},1500);
+  }).catch(function(e){
+    console.error('Save failed:',e);
+    _setSaveStatus('\u26a0 Save failed \u2014 check connection','var(--red-text)');
+  });
 }
 
 function fmt(n,dec){if(dec===undefined)dec=2;if(n==null||isNaN(n))return'—';return new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(n);}
