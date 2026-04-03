@@ -743,16 +743,24 @@ function _setSaveStatus(msg,color){
   if(el){el.textContent=msg;el.style.color=color||'';}
 }
 function saveAll(){
-  if(!appData||!appData.accounts||appData.accounts.length===0)return;
-  _lastSaveTime=Date.now();
-  appData._savedAt=_lastSaveTime;
-  firebase.database().ref('appData').set(appData).then(function(){
-    _setSaveStatus('Saved','var(--green-text)');
-    setTimeout(function(){updateSyncDisplay();var el=document.getElementById('syncTime');if(el)el.style.color='';},1500);
-  }).catch(function(e){
-    console.error('Save failed:',e);
+  try{
+    if(!appData||!appData.accounts||appData.accounts.length===0)return;
+    _lastSaveTime=Date.now();
+    appData._savedAt=_lastSaveTime;
+    var p=firebase.database().ref('appData').set(appData);
+    if(p&&typeof p.then==='function'){
+      p.then(function(){
+        _setSaveStatus('Saved','var(--green-text)');
+        setTimeout(function(){updateSyncDisplay();var el=document.getElementById('syncTime');if(el)el.style.color='';},1500);
+      }).catch(function(e){
+        console.error('Save failed:',e);
+        _setSaveStatus('\u26a0 Save failed \u2014 check connection','var(--red-text)');
+      });
+    }
+  }catch(e){
+    console.error('saveAll error:',e);
     _setSaveStatus('\u26a0 Save failed \u2014 check connection','var(--red-text)');
-  });
+  }
 }
 
 function fmt(n,dec){if(dec===undefined)dec=2;if(n==null||isNaN(n))return'—';return new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(n);}
@@ -1275,7 +1283,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
     '</div>':'';
 
   var aid=acc?acc.id:0;
-  return '<div class="holdings-card"><div class="holdings-header"><div class="holdings-title">Holdings</div>'+(!isRollup&&acc?'<button class="btn-add btn-sm" onclick="openAddPosition('+aid+')">+ Add Position</button>':'')+'</div><div class="tbl-head'+rc+'">'+hh+'</div>'+(rr||'<div class="empty-state">No holdings yet.</div>')+(rr?invRow:'')+cashRR+portRow+'</div>';
+  return '<div class="holdings-card"><div class="holdings-header"><div class="holdings-title">Holdings</div>'+(!isRollup&&acc?'<button class="btn-add btn-sm" onclick="openAddPosition(\''+aid+'\')">+ Add Position</button>':'')+'</div><div class="tbl-head'+rc+'">'+hh+'</div>'+(rr||'<div class="empty-state">No holdings yet.</div>')+(rr?invRow:'')+cashRR+portRow+'</div>';
 }
 
 function gSV(h,col,isRollup){
