@@ -1058,8 +1058,9 @@ function mergeHoldingsBySymbol(holdings){
       map[h.symbol].dividends=(map[h.symbol].dividends||[]).concat(h.dividends||[]);
       if(!map[h.symbol].currentPrice&&h.currentPrice)map[h.symbol].currentPrice=h.currentPrice;
       if(!map[h.symbol].dayChangePct&&h.dayChangePct)map[h.symbol].dayChangePct=h.dayChangePct;
+      map[h.symbol].accountId=null;map[h.symbol].accountName=''; // multi-account — no single owner
     }else{
-      map[h.symbol]=Object.assign({},h,{lots:(h.lots||[]).slice(),accountId:null,accountName:''});
+      map[h.symbol]=Object.assign({},h,{lots:(h.lots||[]).slice()}); // preserve accountId for single-account holdings
       order.push(h.symbol);
     }
   });
@@ -2563,9 +2564,14 @@ function updateLotInline(lotId){
   if(usdEl&&fxUSDCAD>0&&price)usdEl.textContent=Math.round(price/fxUSDCAD).toLocaleString('en-US');
 }
 function saveLotInline(accId,holdingId,lotId){
-  var acc=getAccount(accId);
-  var h=acc&&acc.holdings.find(function(hh){return hh.id===holdingId;});
-  var lot=h&&h.lots.find(function(l){return l.id===lotId;});
+  // Search all accounts by lot ID — works in account, category, and summary views
+  var lot=null,h=null;
+  appData.accounts.forEach(function(a){
+    a.holdings.forEach(function(hh){
+      var l=hh.lots&&hh.lots.find(function(ll){return ll.id===lotId;});
+      if(l){lot=l;h=hh;}
+    });
+  });
   if(!lot)return;
   var dateEl=document.getElementById('lot_date_'+lotId);
   var sharesEl=document.getElementById('lot_shares_'+lotId);
