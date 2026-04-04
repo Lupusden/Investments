@@ -1366,7 +1366,7 @@ function lotsHTML(h,acc,isOpen){
       +fxCells
       +'<input class="lot-inp" type="number" id="lot_comm_'+l.id+'" value="'+(l.commission||0)+'" step="0.01" min="0" oninput="updateLotInline(\''+l.id+'\')" onchange="saveLotInline('+acc.id+',\''+h.id+'\',\''+l.id+'\')">'
       +'<div class="lot-val" id="lot_invested_'+l.id+'">'+investedDisp+'</div>'
-      +'<div class="lot-actions"><button class="btn-ghost" onclick="openClosePosition('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Close</button><button class="btn-ghost danger" onclick="confirmDeleteLot('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Delete</button></div>'
+      +'<div class="lot-actions"><button class="btn-ghost" style="font-size:10px;color:var(--text2)" onclick="openClosePosition('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Sell Lot</button><button class="btn-ghost danger" onclick="confirmDeleteLot('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Delete</button></div>'
       +'</div>';
   }).join('');
   var totInvestedDisp=Math.round(totInvested).toLocaleString('en-US');
