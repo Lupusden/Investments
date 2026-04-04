@@ -367,10 +367,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
       <div class="pos-status" id="posStatus"></div>
       <div style="margin:4px 0 2px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="posManualPrice" onchange="toggleManualCcy()" style="cursor:pointer"> Manual price — no live feed</label>
-        <div id="posManualCcyRow" style="display:none;align-items:center;gap:6px">
+        <div id="posManualCcyRow" style="display:none;align-items:center;gap:6px;flex-wrap:wrap">
           <span style="font-size:12px;color:var(--text2)">Currency:</span>
           <button type="button" id="posManualCcyUSD" class="ccy-btn active" onclick="setManualCcy('USD')" style="font-size:11px;padding:2px 8px">USD</button>
           <button type="button" id="posManualCcyCAD" class="ccy-btn" onclick="setManualCcy('CAD')" style="font-size:11px;padding:2px 8px">CAD</button>
+          <span style="font-size:12px;color:var(--text2);margin-left:8px">Current Price:</span>
+          <input type="number" id="posManualCurrentPrice" step="0.01" placeholder="0.00" style="width:90px;font-size:12px;padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg)" oninput="document.getElementById('posCurrentPrice').value=this.value">
         </div>
       </div>
       <div class="section-label">Lot Info</div>
@@ -2194,6 +2196,7 @@ function openAddPosition(accId){
   _selCurrency='USD';_selFxRate=1;
   var mp=document.getElementById('posManualPrice');if(mp)mp.checked=false;
   var mcr=document.getElementById('posManualCcyRow');if(mcr)mcr.style.display='none';
+  var mcp=document.getElementById('posManualCurrentPrice');if(mcp)mcp.value='';
   setManualCcy('USD');
   openModal('modalAddPos');
   setTimeout(function(){document.getElementById('posSymbol').focus();},100);
@@ -2206,7 +2209,7 @@ function exchFlag(exchange,currency){return EXCH_FLAGS[exchange]||CCY_FLAGS[curr
 var EXCH_CCY={'TOR':'CAD','CVE':'CAD','TSX':'CAD','LSE':'GBP','ASX':'AUD','TYO':'JPY','OSA':'JPY','SHH':'CNY','SHE':'CNY','HKG':'HKD','FRA':'EUR','GER':'EUR','XETR':'EUR','EPA':'EUR','PAR':'EUR','AMS':'EUR','STO':'SEK','VTX':'CHF','MCE':'EUR','MIL':'EUR','SGX':'SGD','KSC':'KRW','KOE':'KRW','NSI':'INR','BSE':'INR','SAO':'BRL','JSE':'ZAR','NZE':'NZD','CPH':'DKK','OSL':'NOK','HEL':'EUR','EBR':'EUR','VIE':'EUR','TLV':'ILS','MEX':'MXN','IST':'TRY'};
 function inferCurrency(exchange,currency){return currency||EXCH_CCY[exchange||'']||'USD';}
 var _symTimer=null,_symItems=[],_symIdx=-1,_selCurrency='USD',_selFxRate=1;
-function toggleManualCcy(){var row=document.getElementById('posManualCcyRow');if(row)row.style.display=document.getElementById('posManualPrice').checked?'flex':'none';}
+function toggleManualCcy(){var checked=document.getElementById('posManualPrice').checked;var row=document.getElementById('posManualCcyRow');if(row)row.style.display=checked?'flex':'none';if(!checked){var mcp=document.getElementById('posManualCurrentPrice');if(mcp)mcp.value='';document.getElementById('posCurrentPrice').value='';}}
 function updateManualPrice(hid,accId){
   var inp=document.getElementById('manualPriceInput_'+hid);
   if(!inp)return;
