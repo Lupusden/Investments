@@ -1367,7 +1367,7 @@ function lotsHTML(h,acc,isOpen){
   var totalRow='<div class="lot-row" style="border-top:1px solid var(--border);margin-top:2px;font-weight:600"><div class="lot-val" style="color:var(--text2);font-weight:400">Total</div><div class="lot-val" style="font-weight:600">'+fmt(totShares,h.lots.some(function(l){return(l.shares||0)%1>0.0001;})?5:0)+'</div><div class="lot-val"></div>'+fxTotCols+'<div class="lot-val"></div><div class="lot-val" style="font-weight:600;color:var(--blue)">'+totInvestedDisp+'</div><div class="lot-actions"></div></div>';
   var buyPriceHdr='Buy Price'+(isNonUSD?' ('+hCcy+')':'');
   var fxHdrs=isNonUSD?'<span>FX Rate</span><span>USD Equiv</span>':'';
-  var manualPriceRow=h.manualPrice?'<div class="add-lot-row" style="gap:8px"><span style="font-size:11px;color:var(--text2)">Current Price ('+hCcy+'):</span><input type="number" id="manualPriceInput_'+h.id+'" step="0.01" placeholder="'+(h.currentPrice||'')+'" style="width:90px;font-size:11px;padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg)"><button class="btn-ghost" style="padding:2px 8px;font-size:11px" onclick="updateManualPrice(\''+h.id+'\','+acc.id+')">Update</button></div>':'';
+  var manualPriceRow=h.manualPrice?'<div class="add-lot-row" style="gap:8px"><span style="font-size:11px;color:var(--text2);font-weight:600">Current Price ('+hCcy+'):</span><input type="number" id="manualPriceInput_'+h.id+'" step="0.01" value="'+(h.currentPrice||'')+'" placeholder="0.00" style="width:90px;font-size:11px;padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);font-family:inherit" onchange="updateManualPrice(\''+h.id+'\','+acc.id+')"></div>':'';
   return'<div class="'+panelClass+'" id="lots_'+h.id+'"><div class="lots-head">'+hdr('Buy Date','date')+hdr('Amount','shares')+hdr(buyPriceHdr,'price')+fxHdrs+hdr('Commission','commission')+'<span>Invested</span><span>Actions</span></div>'+rows+(sorted.length>1?totalRow:'')+manualPriceRow+'<div class="add-lot-row"><button class="btn-ghost" onclick="openAddLot('+acc.id+',\''+h.id+'\')">+ Add Lot</button></div></div>';
 }
 
@@ -2225,8 +2225,16 @@ function updateManualPrice(hid,accId){
   if(!inp)return;
   var val=parseFloat(inp.value);
   if(!val||val<=0)return;
-  var acc=getAccount(accId);if(!acc)return;
-  var h=acc.holdings.find(function(hh){return hh.id===hid;});if(!h)return;
+  // search the given account first, fall back to all accounts (rollup views)
+  var acc=getAccount(accId);
+  var h=acc&&acc.holdings.find(function(hh){return hh.id===hid;});
+  if(!h){
+    appData.accounts.forEach(function(a){
+      var found=a.holdings&&a.holdings.find(function(hh){return hh.id===hid;});
+      if(found)h=found;
+    });
+  }
+  if(!h)return;
   h.currentPrice=val;
   saveAll();render();
 }
