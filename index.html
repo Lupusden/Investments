@@ -3335,9 +3335,9 @@ async function fetchAllPrices(){
         }
       }catch(e){}
     }));
-    render();
     if(j+CONC<syms.length)await new Promise(function(r){setTimeout(r,300);});
   }
+  render();
   saveAll();
   _lastSync=new Date();
   updateSyncDisplay();
@@ -3351,7 +3351,7 @@ function _applyZoom(){
   var el=document.getElementById('zoomPct');if(el)el.textContent=pct;
   var sl=document.getElementById('zoomSlider');if(sl)sl.value=_fontScaleIdx;
   localStorage.setItem('folio_font_scale',_fontScaleIdx);
-  setTimeout(function(){render();},50);
+  if(_appLoaded)setTimeout(function(){render();},50);
 }
 (function(){_applyZoom();})();
 function setZoom(idx){
