@@ -146,6 +146,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .lots-head span{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;padding:1px 4px}
 .lot-row{display:grid;grid-template-columns:100px 72px 100px 80px 90px 1fr;gap:0;padding:1px 0;align-items:center;min-height:20px}
 .lot-val{font-size:11px;color:var(--text);background:var(--card);border:1px solid var(--border);border-radius:4px;padding:1px 5px;white-space:nowrap;margin:1px 3px 1px 0}
+.lot-inp{font-size:11px;color:var(--text);background:var(--card);border:1px solid var(--border);border-radius:4px;padding:1px 4px;width:calc(100% - 6px);box-sizing:border-box;font-family:inherit;min-width:0;margin:1px 3px 1px 0}
+.lot-inp:focus{outline:none;border-color:var(--blue);background:#f0f6ff}
 .lot-sub{display:block;font-size:11px;color:var(--text2);margin-top:1px;font-weight:400}
 .lot-actions{display:flex;gap:4px;align-items:center;flex-wrap:nowrap}
 .btn-ghost{padding:3px 9px;background:transparent;border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer;color:var(--text2);transition:all .15s;font-family:inherit;white-space:nowrap}
@@ -1345,12 +1347,20 @@ function lotsHTML(h,acc,isOpen){
     var fxDisp=fxToUSD>0?(1/fxToUSD).toFixed(4):'';
     var usdEquiv=fxToUSD>0?Math.round(l.price*fxToUSD).toLocaleString('en-US'):'';
     var nativeComm=fmtNative(l.commission||0,hCcy);
-    var fxCells=isNonUSD?'<div class="lot-val">'+fxDisp+'</div><div class="lot-val">'+usdEquiv+'</div>':'';
+    var fxCells=isNonUSD?'<input class="lot-inp" type="number" id="lot_fx_'+l.id+'" value="'+fxDisp+'" step="0.0001" min="0" oninput="updateLotInline(\''+l.id+'\')" onchange="saveLotInline('+acc.id+',\''+h.id+'\',\''+l.id+'\')"><div class="lot-val" id="lot_usdequiv_'+l.id+'">'+usdEquiv+'</div>':'';
     var invested=(l.shares||0)*(l.price||0)+(l.commission||0);
     var investedFx=isNonUSD?invested*fxToUSD:invested;
     totInvested+=investedFx;totShares+=(l.shares||0);
     var investedDisp=Math.round(investedFx).toLocaleString('en-US');
-    return'<div class="lot-row"><div class="lot-val">'+fmtDate(l.date)+'</div><div class="lot-val">'+fmt(l.shares,3)+'</div><div class="lot-val">'+nativePrice+'</div>'+fxCells+'<div class="lot-val">'+nativeComm+'</div><div class="lot-val">'+investedDisp+'</div><div class="lot-actions"><button class="btn-ghost" onclick="openClosePosition('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Close Position</button><button class="btn-ghost" onclick="openEditLot('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Edit</button><button class="btn-ghost danger" onclick="confirmDeleteLot('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Delete</button></div></div>';
+    return'<div class="lot-row">'
+      +'<input class="lot-inp" type="date" id="lot_date_'+l.id+'" value="'+esc(l.date||'')+'" onchange="saveLotInline('+acc.id+',\''+h.id+'\',\''+l.id+'\')">'
+      +'<input class="lot-inp" type="number" id="lot_shares_'+l.id+'" value="'+(l.shares||'')+'" step="0.001" min="0" oninput="updateLotInline(\''+l.id+'\')" onchange="saveLotInline('+acc.id+',\''+h.id+'\',\''+l.id+'\')">'
+      +'<input class="lot-inp" type="number" id="lot_price_'+l.id+'" value="'+(l.price||'')+'" step="0.01" min="0" oninput="updateLotInline(\''+l.id+'\')" onchange="saveLotInline('+acc.id+',\''+h.id+'\',\''+l.id+'\')">'
+      +fxCells
+      +'<input class="lot-inp" type="number" id="lot_comm_'+l.id+'" value="'+(l.commission||0)+'" step="0.01" min="0" oninput="updateLotInline(\''+l.id+'\')" onchange="saveLotInline('+acc.id+',\''+h.id+'\',\''+l.id+'\')">'
+      +'<div class="lot-val" id="lot_invested_'+l.id+'">'+investedDisp+'</div>'
+      +'<div class="lot-actions"><button class="btn-ghost" onclick="openClosePosition('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Close</button><button class="btn-ghost danger" onclick="confirmDeleteLot('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Delete</button></div>'
+      +'</div>';
   }).join('');
   var totInvestedDisp=Math.round(totInvested).toLocaleString('en-US');
   var fxTotCols=isNonUSD?'<span></span><span></span>':'';
@@ -2518,6 +2528,40 @@ function openEditLot(accId,holdingId,lotId){
     totInvEl.textContent=Math.round(totInv).toLocaleString('en-US');
   }
   openModal('modalEditLot');
+}
+function updateLotInline(lotId){
+  var priceEl=document.getElementById('lot_price_'+lotId);
+  var sharesEl=document.getElementById('lot_shares_'+lotId);
+  var commEl=document.getElementById('lot_comm_'+lotId);
+  var fxEl=document.getElementById('lot_fx_'+lotId);
+  var investedEl=document.getElementById('lot_invested_'+lotId);
+  var usdEl=document.getElementById('lot_usdequiv_'+lotId);
+  var price=parseFloat(priceEl&&priceEl.value)||0;
+  var shares=parseFloat(sharesEl&&sharesEl.value)||0;
+  var comm=parseFloat(commEl&&commEl.value)||0;
+  var fxUSDCAD=fxEl?parseFloat(fxEl.value)||0:0;
+  var fxToUSD=fxUSDCAD>0?1/fxUSDCAD:_cadUsdRate;
+  var invested=shares*price+comm;
+  if(fxEl&&fxToUSD>0)invested=invested*fxToUSD;
+  if(investedEl)investedEl.textContent=Math.round(invested).toLocaleString('en-US');
+  if(usdEl&&fxUSDCAD>0&&price)usdEl.textContent=Math.round(price/fxUSDCAD).toLocaleString('en-US');
+}
+function saveLotInline(accId,holdingId,lotId){
+  var acc=getAccount(accId);
+  var h=acc&&acc.holdings.find(function(hh){return hh.id===holdingId;});
+  var lot=h&&h.lots.find(function(l){return l.id===lotId;});
+  if(!lot)return;
+  var dateEl=document.getElementById('lot_date_'+lotId);
+  var sharesEl=document.getElementById('lot_shares_'+lotId);
+  var priceEl=document.getElementById('lot_price_'+lotId);
+  var commEl=document.getElementById('lot_comm_'+lotId);
+  var fxEl=document.getElementById('lot_fx_'+lotId);
+  if(dateEl&&dateEl.value)lot.date=dateEl.value;
+  var sv=parseFloat(sharesEl&&sharesEl.value);if(sv>0)lot.shares=sv;
+  var pv=parseFloat(priceEl&&priceEl.value);if(pv>0)lot.price=pv;
+  lot.commission=parseFloat(commEl&&commEl.value)||0;
+  if(fxEl&&fxEl.value){var fxD=parseFloat(fxEl.value);if(fxD>0)lot.fxRate=1/fxD;}
+  saveAll();render();
 }
 function saveEditLot(){
   var acc=getAccount(editLotCtx.accId);var h=acc&&acc.holdings.find(function(hh){return hh.id==editLotCtx.holdingId;});var lot=h&&h.lots.find(function(l){return l.id==editLotCtx.lotId;});if(!lot)return;
