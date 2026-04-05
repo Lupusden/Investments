@@ -295,6 +295,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .empty-state{text-align:center;padding:40px;color:var(--text2);font-size:14px}
 .tab.drag-over{border-color:var(--blue);opacity:.7}
 .tab.dragging{opacity:.4}
+.ov-acc-row:hover{background:#fafafe!important}
 .lp-dragging{opacity:0.35!important;transition:none!important}
 .lp-drop-target{background:rgba(0,113,227,.13)!important;border-color:var(--blue)!important;color:var(--blue)!important}
 .drag-ghost{position:fixed;pointer-events:none;z-index:9999;background:var(--card);border:1.5px solid var(--blue);border-radius:var(--radius-pill);padding:3px 10px;font-size:11px;font-weight:600;color:var(--blue);white-space:nowrap;box-shadow:0 4px 18px rgba(0,0,0,.18);cursor:grabbing}
@@ -1177,16 +1178,16 @@ function renderOverview(el){
   allAccs.forEach(function(a){var s=calcAccountStats(a);gtv+=s.totalValue;gtc+=s.totalCost;gtic+=s.invCost;gtd+=s.totalDailyPnL;gtfx+=s.totalFxGain;gtdiv+=s.totalDividends;});
   var gtp=gtv-gtc+gtdiv,gtpp=gtic>0?(gtp/gtic*100):0,gtsg=gtp-gtfx-gtdiv;
 
-  var cols='minmax(140px,2fr) 80px 80px 80px 80px 80px 80px 80px 80px 80px';
+  var cols='minmax(160px,2fr) 90px 90px 60px 80px 90px 72px 80px 90px 72px';
   var hdrs=['Account','Invested','Mkt Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L%'];
-  var thStyle='font-size:9.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;padding:3px 8px;text-align:right;white-space:nowrap;';
-  var thead='<div style="display:grid;grid-template-columns:'+cols+';background:var(--bg);border-bottom:1px solid var(--border);padding:0 10px">'
+  var thStyle='font-size:9.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;padding:4px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border);';
+  var thead='<div style="display:grid;grid-template-columns:'+cols+';background:var(--bg);padding:0 10px">'
     +hdrs.map(function(h,i){return'<div style="'+thStyle+(i===0?'text-align:left':'')+'">'+h+'</div>';}).join('')
     +'</div>';
 
   function ccFmt(n){return'<span class="'+cc(n)+'">'+fmtC(n)+'</span>';}
   function pFmt(n){return'<span class="'+cc(n)+'">'+fmtPct(n)+'</span>';}
-  function cell(v,i,cls){return'<div style="font-size:11px;padding:2px 8px;text-align:'+(i===0?'left':'right')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'+(cls||'')+'">'+v+'</div>';}
+  function cell(v,i){return'<div style="font-size:11px;padding:3px 10px;text-align:'+(i===0?'left':'right')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+v+'</div>';}
 
   var rows='';
   appData.catOrder.forEach(function(catId){
@@ -1195,31 +1196,41 @@ function renderOverview(el){
     if(!catAccs.length)return;
     var ctv=0,ctc=0,ctic=0,ctd=0,ctfx=0,ctdiv=0;
     catAccs.forEach(function(a){var s=calcAccountStats(a);ctv+=s.totalValue;ctc+=s.totalCost;ctic+=s.invCost;ctd+=s.totalDailyPnL;ctfx+=s.totalFxGain;ctdiv+=s.totalDividends;});
-    var ctp=ctv-ctc+ctdiv,ctpp=ctic>0?(ctp/ctic*100):0,ctsg=ctp-ctfx-ctdiv;
+    var ctp=ctv-ctc+ctdiv,ctpp=ctic>0?(ctp/ctic*100):0;
     var ctdp=ctv>0?ctd/ctv*100:0;
-    // Category header row
-    rows+='<div style="display:grid;grid-template-columns:'+cols+';background:var(--surface2);border-bottom:1px solid var(--border);padding:0 10px;cursor:pointer" onclick="switchTab(\'cat_'+catId+'\')">'
-      +cell('<span style="font-size:11px;font-weight:700;color:var(--blue)">'+(cat.icon?cat.icon+' ':'')+esc(cat.name)+'</span>',0)
-      +cell(fmtC(ctc-catAccs.reduce(function(s,a){return s+getCashPortValue(a);},0)),1)
-      +cell(fmtC(ctv),2)
-      +cell(pFmt(ctdp),3)
-      +cell(ccFmt(ctd),4)
-      +cell(ccFmt(ctsg),5)
-      +cell(ccFmt(ctfx),6)
-      +cell(fmtC(ctdiv),7)
-      +cell(ccFmt(ctp),8)
-      +cell(pFmt(ctpp),9)
+    var ctInvested=ctc-catAccs.reduce(function(s,a){return s+getCashPortValue(a);},0);
+    var ctsg=ctp-ctfx-ctdiv;
+    // Category header row — prominent with left accent bar
+    rows+='<div style="display:grid;grid-template-columns:'+cols+';background:rgba(0,113,227,0.05);border-top:2px solid var(--border);border-bottom:1px solid var(--border-light);padding:0 10px;cursor:pointer;position:relative" onclick="switchTab(\'cat_'+catId+'\')">'
+      +cell('<div style="display:flex;align-items:center;gap:7px">'
+        +'<div style="width:3px;height:18px;background:var(--blue);border-radius:2px;flex-shrink:0"></div>'
+        +'<span style="font-size:11.5px;font-weight:700;color:var(--blue)">'+(cat.icon?cat.icon+' ':'')+esc(cat.name)+'</span>'
+        +'<span style="font-size:10px;color:var(--text2);font-weight:400">'+catAccs.length+' account'+(catAccs.length!==1?'s':'')+'</span>'
+        +'</div>',0)
+      +cell('<span style="font-weight:600;color:var(--text)">'+fmtC(ctInvested)+'</span>',1)
+      +cell('<span style="font-weight:600;color:var(--text)">'+fmtC(ctv)+'</span>',2)
+      +cell('<span class="'+cc(ctdp)+'" style="font-weight:600">'+fmtPct(ctdp)+'</span>',3)
+      +cell('<span class="'+cc(ctd)+'" style="font-weight:600">'+fmtC(ctd)+'</span>',4)
+      +cell('<span class="'+cc(ctsg)+'" style="font-weight:600">'+fmtC(ctsg)+'</span>',5)
+      +cell('<span class="'+cc(ctfx)+'" style="font-weight:600">'+fmtC(ctfx)+'</span>',6)
+      +cell('<span style="font-weight:600">'+fmtC(ctdiv)+'</span>',7)
+      +cell('<span class="'+cc(ctp)+'" style="font-weight:600">'+fmtC(ctp)+'</span>',8)
+      +cell('<span class="'+cc(ctpp)+'" style="font-weight:600">'+fmtPct(ctpp)+'</span>',9)
       +'</div>';
     // Account rows
-    catAccs.forEach(function(a){
+    catAccs.forEach(function(a,ai){
       var s=calcAccountStats(a);
       var tp=s.totalValue-s.totalCost+s.totalDividends;
       var tpp=s.invCost>0?(tp/s.invCost*100):0;
       var tsg=tp-s.totalFxGain-s.totalDividends;
       var tdp=s.totalValue>0?s.totalDailyPnL/s.totalValue*100:0;
       var investedOnly=s.totalCost-getCashPortValue(a);
-      rows+='<div class="holding-row-wrap"><div style="display:grid;grid-template-columns:'+cols+';padding:0 10px;min-height:26px;align-items:center;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#fafafe\'" onmouseout="this.style.background=\'\'" onclick="switchTab('+a.id+')">'
-        +cell('<span style="font-size:11px;color:var(--text);padding-left:12px">'+esc(a.name)+'</span>',0)
+      var isLast=ai===catAccs.length-1;
+      rows+='<div style="display:grid;grid-template-columns:'+cols+';padding:0 10px;min-height:28px;align-items:center;cursor:pointer;border-bottom:1px solid '+(isLast?'var(--border-light)':'var(--border-light)')+';transition:background .12s" class="ov-acc-row" onclick="switchTab('+a.id+')">'
+        +cell('<div style="display:flex;align-items:center;gap:6px;padding-left:16px">'
+          +'<span style="font-size:10.5px;color:var(--text2);font-weight:400">→</span>'
+          +'<span style="font-size:11px;color:var(--text)">'+esc(a.name)+'</span>'
+          +'</div>',0)
         +cell(fmtC(investedOnly),1)
         +cell(fmtC(s.totalValue),2)
         +cell(pFmt(tdp),3)
@@ -1229,23 +1240,24 @@ function renderOverview(el){
         +cell(fmtC(s.totalDividends),7)
         +cell(ccFmt(tp),8)
         +cell(pFmt(tpp),9)
-        +'</div></div>';
+        +'</div>';
     });
   });
 
   // Grand total row
   var gtsg2=gtp-gtfx-gtdiv,gtdp=gtv>0?gtd/gtv*100:0;
-  var totalRow='<div style="display:grid;grid-template-columns:'+cols+';border-top:2px solid var(--border);padding:0 10px;min-height:28px;align-items:center;background:var(--bg)">'
-    +cell('<span style="font-size:11px;font-weight:700">Total</span>',0)
-    +cell('<span style="font-weight:600">'+fmtC(gtc-allAccs.reduce(function(s,a){return s+getCashPortValue(a);},0))+'</span>',1)
-    +cell('<span style="font-weight:600">'+fmtC(gtv)+'</span>',2)
-    +cell('<span class="'+cc(gtdp)+'" style="font-weight:600">'+fmtPct(gtdp)+'</span>',3)
-    +cell('<span class="'+cc(gtd)+'" style="font-weight:600">'+fmtC(gtd)+'</span>',4)
-    +cell('<span class="'+cc(gtsg2)+'" style="font-weight:600">'+fmtC(gtsg2)+'</span>',5)
-    +cell('<span class="'+cc(gtfx)+'" style="font-weight:600">'+fmtC(gtfx)+'</span>',6)
-    +cell('<span style="font-weight:600">'+fmtC(gtdiv)+'</span>',7)
-    +cell('<span class="'+cc(gtp)+'" style="font-weight:600">'+fmtC(gtp)+'</span>',8)
-    +cell('<span class="'+cc(gtpp)+'" style="font-weight:600">'+fmtPct(gtpp)+'</span>',9)
+  var gtInvested=gtc-allAccs.reduce(function(s,a){return s+getCashPortValue(a);},0);
+  var totalRow='<div style="display:grid;grid-template-columns:'+cols+';border-top:2px solid var(--border);padding:0 10px;min-height:30px;align-items:center;background:var(--bg)">'
+    +cell('<span style="font-size:11.5px;font-weight:700;color:var(--text)">Total</span>',0)
+    +cell('<span style="font-weight:700">'+fmtC(gtInvested)+'</span>',1)
+    +cell('<span style="font-weight:700">'+fmtC(gtv)+'</span>',2)
+    +cell('<span class="'+cc(gtdp)+'" style="font-weight:700">'+fmtPct(gtdp)+'</span>',3)
+    +cell('<span class="'+cc(gtd)+'" style="font-weight:700">'+fmtC(gtd)+'</span>',4)
+    +cell('<span class="'+cc(gtsg2)+'" style="font-weight:700">'+fmtC(gtsg2)+'</span>',5)
+    +cell('<span class="'+cc(gtfx)+'" style="font-weight:700">'+fmtC(gtfx)+'</span>',6)
+    +cell('<span style="font-weight:700">'+fmtC(gtdiv)+'</span>',7)
+    +cell('<span class="'+cc(gtp)+'" style="font-weight:700">'+fmtC(gtp)+'</span>',8)
+    +cell('<span class="'+cc(gtpp)+'" style="font-weight:700">'+fmtPct(gtpp)+'</span>',9)
     +'</div>';
 
   var table='<div class="holdings-card" style="margin-bottom:16px">'+
