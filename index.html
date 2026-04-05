@@ -926,7 +926,7 @@ function renderTabBar(){
   var bar=document.getElementById('tabBar');bar.innerHTML='';
   var ovTab=mkTab('overview','Overview',false,false,false,null);ovTab.classList.add('tab-primary');bar.appendChild(ovTab);
   bar.appendChild(mkDivider());
-  var sumTab=mkTab('summary','Summary',false,false,false,null);sumTab.classList.add('tab-primary');bar.appendChild(sumTab);
+  var sumTab=mkTab('summary','All Stocks',false,false,false,null);sumTab.classList.add('tab-primary');bar.appendChild(sumTab);
   for(var i=0;i<appData.catOrder.length;i++){
     var catId=appData.catOrder[i];var cat=getCategory(catId);if(!cat)continue;
     bar.appendChild(mkDivider());
@@ -1166,7 +1166,7 @@ function renderSummary(el){
   var tp=tv-tc+tdiv,tpp=tic>0?(tp/tic*100):0,tsg=tp-tfx-tdiv;
   var allH=accs.reduce(function(arr,a){return arr.concat(a.holdings.map(function(h){return Object.assign({},h,{accountName:a.name,accountId:a.id});}));},[]);
   var mergedH=mergeHoldingsBySymbol(allH);
-  el.innerHTML=heroHTML('','Summary')+statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs)+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
+  el.innerHTML=heroHTML('','All Stocks')+statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs)+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
   var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);
   bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);
 }
