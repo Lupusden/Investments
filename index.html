@@ -473,7 +473,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
         </div>
       </div>
       <div id="importHint" style="font-size:10px;color:var(--text2);margin-bottom:10px">
-        Required columns: <strong>Symbol</strong>, <strong>Currency</strong>, <strong>Units</strong>, <strong>Price</strong>, <strong>Transaction Date</strong> &nbsp;|&nbsp; Optional: Name, Exchange (auto-inferred from currency if omitted)
+        Required columns: <strong>Symbol</strong>, <strong>Currency</strong>, <strong>Units</strong>, <strong>Price</strong>, <strong>Transaction Date</strong> &nbsp;|&nbsp; Optional: Name, Exchange (auto-inferred from currency if omitted) &nbsp;|&nbsp; Use <strong>Symbol = Cash</strong> with Currency USD or CAD to add cash balance
       </div>
       <div id="importPreview" style="display:none">
         <div style="font-size:9.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Preview <span id="importRowCount"></span></div>
@@ -3190,18 +3190,21 @@ function parseImportRows(data){
     var price=parseFloat((findCol(obj,['price','purchaseprice','buyprice','buyprice','cost'])||'0').replace(/,/g,''));
     // When account column present, validate account name resolves
     var accMatch=hasAccountCol?appData.accounts.find(function(a){return a.name.trim().toLowerCase()===accountName.toLowerCase();}):true;
-    var ok=sym&&currency&&units>0&&price>0&&date&&accMatch;
-    if(!ok)errors.push('Row '+(idx+2)+': missing required field(s)'+(hasAccountCol&&!accMatch?' (account "'+accountName+'" not found)':'')+'.');
+    var isCash=sym==='CASH';
+    var ok=isCash
+      ?(currency&&(currency==='USD'||currency==='CAD')&&units>0&&date&&accMatch)
+      :(sym&&currency&&units>0&&price>0&&date&&accMatch);
+    if(!ok)errors.push('Row '+(idx+2)+': missing required field(s)'+(hasAccountCol&&!accMatch?' (account "'+accountName+'" not found)':'')+(!isCash&&!sym?' (Symbol)':'')+(!currency?' (Currency)':'')+(!isCash&&!(price>0)?' (Price)':'')+(!date?' (Date)':'')+'.');
     var exchange=exchangeRaw||inferExchange(currency);
     var rowIdx=-1;
     if(ok){
       rowIdx=_importRows.length;
-      _importRows.push({sym:sym,name:name,exchange:exchange,currency:currency,date:date,units:units,price:price,account:accountName});
+      _importRows.push({sym:sym,name:name,exchange:exchange,currency:currency,date:date,units:units,price:price||1,account:accountName,_isCash:isCash});
     }
-    var exchCell=ok?buildExchSelectHTML(exchange,rowIdx):'<span style="color:var(--text2)">'+esc(exchange||'—')+'</span>';
+    var exchCell=isCash?'<span style="color:var(--text2);font-style:italic">Cash</span>':(ok?buildExchSelectHTML(exchange,rowIdx):'<span style="color:var(--text2)">'+esc(exchange||'—')+'</span>');
     var status=!ok
-      ?'<span style="color:var(--red-text)">Missing: '+(sym?'':'Symbol ')+(currency?'':'Currency ')+(units>0?'':'Units ')+(price>0?'':'Price ')+(date?'':'Date ')+(hasAccountCol&&!accMatch?'(account not found)':'')+'</span>'
-      :'<span style="color:var(--green-text)">OK</span>';
+      ?'<span style="color:var(--red-text)">Missing: '+(sym?'':'Symbol ')+(currency?'':'Currency ')+(units>0?'':'Units ')+(isCash||price>0?'':'Price ')+(date?'':'Date ')+(hasAccountCol&&!accMatch?'(account not found)':'')+'</span>'
+      :(isCash?'<span style="color:var(--blue)">→ Cash ('+currency+')</span>':'<span style="color:var(--green-text)">OK</span>');
     var tr=document.createElement('tr');
     tr.style.borderBottom='1px solid var(--border)';
     tr.innerHTML=(hasAccountCol?'<td style="padding:4px 8px;color:var(--text2)">'+(idx+1)+'</td><td style="padding:4px 8px;color:var(--blue)">'+esc(accountName||'—')+'</td>':'<td style="padding:4px 8px;color:var(--text2)">'+(idx+1)+'</td>')
@@ -3211,7 +3214,7 @@ function parseImportRows(data){
       +'<td style="padding:4px 8px;color:var(--text2)">'+esc(currency||'—')+'</td>'
       +'<td style="padding:4px 8px">'+esc(date||'—')+'</td>'
       +'<td style="padding:4px 8px;text-align:right">'+esc(units||'—')+'</td>'
-      +'<td style="padding:4px 8px;text-align:right">'+esc(price||'—')+'</td>'
+      +'<td style="padding:4px 8px;text-align:right">'+(isCash?'—':esc(price||'—'))+'</td>'
       +'<td style="padding:4px 8px">'+status+'</td>';
     tbody.appendChild(tr);
   });
@@ -3226,7 +3229,7 @@ async function lookupImportExchanges(){
   indicator.style.display='';
   // build map: symbol → [rowIdx] (deduplicate symbols)
   var symMap={};
-  _importRows.forEach(function(row,i){if(!symMap[row.sym])symMap[row.sym]=[];symMap[row.sym].push(i);});
+  _importRows.forEach(function(row,i){if(row._isCash)return;if(!symMap[row.sym])symMap[row.sym]=[];symMap[row.sym].push(i);});
   var syms=Object.keys(symMap);
   for(var si=0;si<syms.length;si++){
     var sym=syms[si];
@@ -3297,7 +3300,16 @@ function doImport(){
     }
     if(!target.holdings)target.holdings=[];
     if(!target.trades)target.trades=[];
+    if(!target.cash)target.cash=[];
     var ccy=row.currency||'USD';
+    // Cash symbol → add to cash balance
+    if(row._isCash){
+      var cashAmount=row.units*(row.price||1);
+      target.cash.push({id:mkUid(),currency:ccy,amount:cashAmount,date:row.date,note:''});
+      byAccount[target.name]=(byAccount[target.name]||0)+1;
+      added++;
+      return;
+    }
     var fxToUSD=ccy==='USD'?1:(ccy==='CAD'?_cadUsdRate:1);
     var flag=exchFlag(row.exchange,ccy);
     var pFx=approxPurchaseFx(row.date);
