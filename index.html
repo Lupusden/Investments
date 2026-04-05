@@ -2905,7 +2905,7 @@ function deleteCategory(catId){
   showConfirmDelete('Delete this category? This cannot be undone.',function(){
     appData.categories=appData.categories.filter(function(c){return c.id!==catId;});
     appData.catOrder=appData.catOrder.filter(function(id){return id!==catId;});
-    if(activeTab==='cat_'+catId)activeTab='summary';
+    if(activeTab==='cat_'+catId)activeTab='overview';
     saveAll();renderTabBar();render();
   });
 }
@@ -2927,7 +2927,7 @@ function deleteAccount(accId){
   showConfirmDelete('Delete this account and all its data? This cannot be undone.',function(){
     appData.accounts=appData.accounts.filter(function(a){return String(a.id)!==String(accId);});
     appData.tabOrder=appData.tabOrder.filter(function(id){return String(id)!==String(accId);});
-    if(String(activeTab)===String(accId))activeTab='summary';
+    if(String(activeTab)===String(accId))activeTab='overview';
     saveAll();renderTabBar();render();
   });
 }
@@ -3197,14 +3197,14 @@ function manageDelete(type,id){
     showConfirmDelete('Delete this category?',function(){
       appData.categories=appData.categories.filter(function(c){return c.id!==id;});
       appData.catOrder=appData.catOrder.filter(function(ci){return ci!==id;});
-      if(activeTab==='cat_'+id)activeTab='summary';
+      if(activeTab==='cat_'+id)activeTab='overview';
       saveAll();renderTabBar();render();
     });
   }else{
     showConfirmDelete('Delete this account and all its data?',function(){
       appData.accounts=appData.accounts.filter(function(a){return String(a.id)!==String(id);});
       appData.tabOrder=appData.tabOrder.filter(function(ai){return String(ai)!==String(id);});
-      if(String(activeTab)===String(id))activeTab='summary';
+      if(String(activeTab)===String(id))activeTab='overview';
       saveAll();renderTabBar();render();
     });
   }
@@ -3760,7 +3760,7 @@ function initApp(){
   _chartCachePurgeOldKeys();
   _lastSync=new Date();
   renderTabBar();
-  switchTab('summary');
+  switchTab('overview');
   fetchCadRate();fetchAllPrices();
   updateSyncDisplay();
   setInterval(function(){doRefresh();},300000);
