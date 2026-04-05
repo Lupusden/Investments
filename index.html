@@ -1051,20 +1051,25 @@ function render(){
 }
 
 function mergeHoldingsBySymbol(holdings){
-  var map={},order=[];
+  var map={},order=[],accNames={};
   holdings.forEach(function(h){
     if(map[h.symbol]){
       map[h.symbol].lots=(map[h.symbol].lots||[]).concat(h.lots||[]);
       map[h.symbol].dividends=(map[h.symbol].dividends||[]).concat(h.dividends||[]);
       if(!map[h.symbol].currentPrice&&h.currentPrice)map[h.symbol].currentPrice=h.currentPrice;
       if(!map[h.symbol].dayChangePct&&h.dayChangePct)map[h.symbol].dayChangePct=h.dayChangePct;
-      map[h.symbol].accountId=null;map[h.symbol].accountName=''; // multi-account — no single owner
+      map[h.symbol].accountId=null;
+      if(h.accountName&&accNames[h.symbol].indexOf(h.accountName)<0)accNames[h.symbol].push(h.accountName);
     }else{
-      map[h.symbol]=Object.assign({},h,{lots:(h.lots||[]).slice()}); // preserve accountId for single-account holdings
+      map[h.symbol]=Object.assign({},h,{lots:(h.lots||[]).slice()});
+      accNames[h.symbol]=h.accountName?[h.accountName]:[];
       order.push(h.symbol);
     }
   });
-  return order.map(function(sym){return map[sym];});
+  return order.map(function(sym){
+    map[sym].accountName=accNames[sym].join(', ');
+    return map[sym];
+  });
 }
 
 function renderSummary(el){
