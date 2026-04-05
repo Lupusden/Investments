@@ -1034,10 +1034,17 @@ function autoSizeCols(card,isRollup){
   });
   if(!w.length)return;
   var nameIdx=2,arrowIdx=w.length-1;
+  // Calculate available width and scale fixed columns down if needed
+  var availWidth=card.clientWidth-20; // subtract horizontal padding
+  var fixedTotal=0;
+  w.forEach(function(v,i){if(i!==nameIdx&&i!==arrowIdx)fixedTotal+=Math.max(v||MIN,MIN);});
+  fixedTotal+=28; // arrow col
+  var nameMin=80;
+  var scale=availWidth>0&&(fixedTotal+nameMin)>availWidth?Math.max(0.6,(availWidth-nameMin)/fixedTotal):1;
   var tpl=w.map(function(v,i){
-    if(i===nameIdx)return'minmax('+Math.max(v||60,80)+'px,1fr)';
+    if(i===nameIdx)return'minmax('+nameMin+'px,1fr)';
     if(i===arrowIdx)return'28px';
-    return Math.max(v||MIN,MIN)+'px';
+    return Math.max(Math.round(Math.max(v||MIN,MIN)*scale),MIN)+'px';
   }).join(' ');
   card.style.setProperty(isRollup?'--rollup-cols':'--cols',tpl);
 }
