@@ -789,6 +789,7 @@ function fmtC(n,dec){if(dec===undefined)dec=0;if(n==null||isNaN(n))return'';var 
 var CCY_SYMS={'USD':'','CAD':'','GBP':'£','EUR':'€','JPY':'¥','AUD':'','HKD':'','SGD':'','CNY':'¥','INR':'₹','BRL':'','CHF':'Fr','KRW':'₩','SEK':'kr','NOK':'kr','DKK':'kr','NZD':'','ZAR':'R','TRY':'₺','ILS':'₪','MXN':''};
 function fmtNative(n,currency,dec){if(dec===undefined)dec=0;if(n==null||isNaN(n))return'';var abs=Math.abs(n);var s=new Intl.NumberFormat('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(abs);var sym=CCY_SYMS[currency||'USD']||'';return(n<0?'-':'')+sym+s;}
 function fmtPct(n){if(n==null||isNaN(n))return'';return(n>=0?'+':'')+fmt(n,1)+'%';}
+function fmtShares(n){if(n==null||isNaN(n))return'';if(n%1===0)return fmt(n,0);var s=n.toString();var dec=(s.split('.')[1]||'').replace(/0+$/,'').length;return fmt(n,Math.min(dec,3));}
 function cc(n){return n>0?'pos':n<0?'neg':'';}
 function today(){return new Date().toISOString().slice(0,10);}
 function getAccount(id){return appData.accounts.find(function(a){return a.id==id;});}
@@ -1180,7 +1181,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
     r+='<div class="cell cell-name-col">'+esc(h.name)+'</div>';
     if(isRollup)r+='<div class="cell" style="text-align:left">'+esc(h.accountName||'')+'</div>';
     r+='<div class="cell" style="text-align:left;font-size:11px;color:var(--text2)">'+esc(h.exchange||'')+'</div>';
-    r+='<div class="cell">'+(c.totalShares%1>=0.00001?fmt(c.totalShares,5):fmt(c.totalShares,0))+'</div>';
+    r+='<div class="cell">'+fmtShares(c.totalShares)+'</div>';
     r+='<div class="cell">'+fmtC(c.avgPrice)+'</div>';
     r+='<div class="cell">'+fmtC(c.totalCost)+'</div>';
     r+='<div class="cell">'+fmtC(h.currentPrice*getFxFactor(h))+'</div>';
@@ -1387,7 +1388,7 @@ function lotsHTML(h,acc,isOpen){
   var totInvestedDisp=Math.round(totInvested).toLocaleString('en-US');
   var fxTotCols=isNonUSD?'<span></span><span></span>':'';
   var manualTotCol=h.manualPrice?'<div class="lot-val"></div>':'';
-  var totalRow='<div class="lot-row" style="border-top:1px solid var(--border);margin-top:2px;font-weight:600"><div class="lot-val" style="color:var(--text2);font-weight:400">Total</div><div class="lot-val" style="font-weight:600">'+fmt(totShares,h.lots.some(function(l){return(l.shares||0)%1>0.0001;})?5:0)+'</div><div class="lot-val"></div>'+manualTotCol+fxTotCols+'<div class="lot-val"></div><div class="lot-val" style="font-weight:600;color:var(--blue)">'+totInvestedDisp+'</div><div class="lot-actions"></div></div>';
+  var totalRow='<div class="lot-row" style="border-top:1px solid var(--border);margin-top:2px;font-weight:600"><div class="lot-val" style="color:var(--text2);font-weight:400">Total</div><div class="lot-val" style="font-weight:600">'+fmtShares(totShares)+'</div><div class="lot-val"></div>'+manualTotCol+fxTotCols+'<div class="lot-val"></div><div class="lot-val" style="font-weight:600;color:var(--blue)">'+totInvestedDisp+'</div><div class="lot-actions"></div></div>';
   var buyPriceHdr='Buy Price'+(isNonUSD?' ('+hCcy+')':'');
   var curPriceHdr=h.manualPrice?'<span>Cur Price ('+hCcy+')</span>':'';
   var fxHdrs=isNonUSD?'<span>FX Rate</span><span>USD Equiv</span>':'';
