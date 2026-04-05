@@ -107,7 +107,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
 .stat-card{background:var(--card);border-radius:var(--radius-sm);padding:3px 8px;box-shadow:var(--shadow-sm);border:1px solid var(--border-light)}
 .stat-label{font-size:9px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px}
-.stat-value{font-size:12px;font-weight:700;letter-spacing:-0.2px}
+.stat-value{font-size:11px;font-weight:700;letter-spacing:-0.2px}
 .stat-val-row{display:flex;align-items:baseline;justify-content:space-between;gap:4px}
 .stat-sub{font-size:9.5px;color:var(--text2);white-space:nowrap}
 .stat-last-col{display:flex;flex-direction:column;gap:2px}
@@ -1165,7 +1165,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
     r+='<div class="cell" style="padding:0"><a class="yf-link" href="https://finance.yahoo.com/quote/'+yfSym+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Open in Yahoo Finance" style="height:100%"><svg width="8" height="8" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg></a></div>';
     r+='<div class="cell cell-name-col">'+esc(h.name)+'</div>';
     if(isRollup)r+='<div class="cell" style="text-align:left">'+esc(h.accountName||'')+'</div>';
-    r+='<div class="cell" style="text-align:left;font-size:12px;color:var(--text2)">'+esc(h.exchange||'')+'</div>';
+    r+='<div class="cell" style="text-align:left;font-size:11px;color:var(--text2)">'+esc(h.exchange||'')+'</div>';
     r+='<div class="cell">'+(c.totalShares%1>=0.00001?fmt(c.totalShares,5):fmt(c.totalShares,0))+'</div>';
     r+='<div class="cell">'+fmtC(c.avgPrice)+'</div>';
     r+='<div class="cell">'+fmtC(c.totalCost)+'</div>';
@@ -1206,7 +1206,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
       +_bd
       +'<div class="cell cell-name-col">USD Cash</div>'
       +acctCell
-      +'<div class="cell" style="text-align:left;font-size:12px;color:var(--text2)">Cash</div>'
+      +'<div class="cell" style="text-align:left;font-size:11px;color:var(--text2)">Cash</div>'
       +'<div class="cell">'+fmt(_usdTotal,0)+'</div>'
       +_bd+'<div class="cell">'+fmtC(_pvUsd)+'</div>'+_bd
       +'<div class="cell">'+fmtC(_pvUsd)+'</div>'
@@ -1220,7 +1220,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
       +_bd
       +'<div class="cell cell-name-col">CAD Cash</div>'
       +acctCell
-      +'<div class="cell" style="text-align:left;font-size:12px;color:var(--text2)">Cash</div>'
+      +'<div class="cell" style="text-align:left;font-size:11px;color:var(--text2)">Cash</div>'
       +'<div class="cell">'+fmt(_cadTotal,0)+'</div>'
       +_bd+'<div class="cell">'+fmtC(_pvCad)+'</div>'+_bd
       +'<div class="cell">'+fmtC(_pvCad)+'</div>'
@@ -1247,7 +1247,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
       +_bd
       +'<div class="cell cell-name-col">USD Cash</div>'
       +_acctBlank
-      +'<div class="cell" style="text-align:left;font-size:12px;color:var(--text2)">Cash</div>'
+      +'<div class="cell" style="text-align:left;font-size:11px;color:var(--text2)">Cash</div>'
       +'<div class="cell">'+fmt(_aggUsd,0)+'</div>'
       +_bd+'<div class="cell">'+fmtC(_pvAggUsd)+'</div>'+_bd
       +'<div class="cell">'+fmtC(_pvAggUsd)+'</div>'
@@ -1259,7 +1259,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
       +_bd
       +'<div class="cell cell-name-col">CAD Cash</div>'
       +_acctBlank
-      +'<div class="cell" style="text-align:left;font-size:12px;color:var(--text2)">Cash</div>'
+      +'<div class="cell" style="text-align:left;font-size:11px;color:var(--text2)">Cash</div>'
       +'<div class="cell">'+fmt(_aggCad,0)+'</div>'
       +_bd+'<div class="cell">'+fmtC(_pvAggCad)+'</div>'+_bd
       +'<div class="cell">'+fmtC(_pvAggCad)+'</div>'
