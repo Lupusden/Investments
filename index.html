@@ -1213,8 +1213,8 @@ function renderOverview(el){
     var ctsg=ctp-ctfx-ctdiv;
     rows+='<div style="display:grid;grid-template-columns:'+cols+';background:rgba(0,113,227,0.05);border-top:2px solid var(--border);border-bottom:1px solid var(--border-light);padding:0 10px;cursor:pointer;position:relative" onclick="switchTab(\'cat_'+catId+'\')">'
       +cell('<div style="display:flex;align-items:center;gap:7px">'
-        +'<div style="width:3px;height:18px;background:var(--blue);border-radius:2px;flex-shrink:0"></div>'
-        +'<span style="font-size:11.5px;font-weight:700;color:var(--blue)">'+(cat.icon?cat.icon+' ':'')+esc(cat.name)+'</span>'
+        +'<div style="width:3px;height:16px;background:var(--blue);border-radius:2px;flex-shrink:0"></div>'
+        +'<span style="font-size:11.5px;font-weight:700;color:var(--blue)">'+esc(cat.name)+'</span>'
         +'<span style="font-size:10px;color:var(--text2);font-weight:400">'+catAccs.length+' account'+(catAccs.length!==1?'s':'')+'</span>'
         +'</div>',0)
       +cell('<span style="font-weight:600;color:var(--text)">'+fmtC(ctInvested)+'</span>',1)
@@ -1239,10 +1239,7 @@ function renderOverview(el){
       var tdp=s.totalValue>0?s.totalDailyPnL/s.totalValue*100:0;
       var investedOnly=s.totalCost-aCash;
       rows+='<div style="display:grid;grid-template-columns:'+cols+';padding:0 10px;min-height:28px;align-items:center;cursor:pointer;border-bottom:1px solid var(--border-light);transition:background .12s" class="ov-acc-row" onclick="switchTab('+a.id+')">'
-        +cell('<div style="display:flex;align-items:center;gap:6px;padding-left:16px">'
-          +'<span style="font-size:10.5px;color:var(--text2);font-weight:400">→</span>'
-          +'<span style="font-size:11px;color:var(--text)">'+esc(a.name)+'</span>'
-          +'</div>',0)
+        +cell('<span style="font-size:11px;color:var(--text);padding-left:20px">'+esc(a.name)+'</span>',0)
         +cell(fmtC(investedOnly),1)
         +cell(fmtC(aMktVal),2)
         +cell('<span style="color:var(--text2)">'+fmtC(aCash)+'</span>',3)
