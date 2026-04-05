@@ -2782,9 +2782,9 @@ function saveNewAcc(){
 }
 function deleteAccount(accId){
   showConfirmDelete('Delete this account and all its data? This cannot be undone.',function(){
-    appData.accounts=appData.accounts.filter(function(a){return a.id!==accId;});
-    appData.tabOrder=appData.tabOrder.filter(function(id){return id!==accId;});
-    if(activeTab===accId)activeTab='summary';
+    appData.accounts=appData.accounts.filter(function(a){return String(a.id)!==String(accId);});
+    appData.tabOrder=appData.tabOrder.filter(function(id){return String(id)!==String(accId);});
+    if(String(activeTab)===String(accId))activeTab='summary';
     saveAll();renderTabBar();render();
   });
 }
@@ -3059,9 +3059,9 @@ function manageDelete(type,id){
     });
   }else{
     showConfirmDelete('Delete this account and all its data?',function(){
-      appData.accounts=appData.accounts.filter(function(a){return a.id!==id;});
-      appData.tabOrder=appData.tabOrder.filter(function(ai){return ai!==id;});
-      if(activeTab===id)activeTab='summary';
+      appData.accounts=appData.accounts.filter(function(a){return String(a.id)!==String(id);});
+      appData.tabOrder=appData.tabOrder.filter(function(ai){return String(ai)!==String(id);});
+      if(String(activeTab)===String(id))activeTab='summary';
       saveAll();renderTabBar();render();
     });
   }
