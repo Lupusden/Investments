@@ -1252,7 +1252,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
     var yfSym=encodeURIComponent(h.symbol);
     r+='<div class="cell cell-sym"><span class="sym">'+(hFlag?hFlag+' ':'')+esc(h.symbol)+'</span></div>';
     r+='<div class="cell" style="padding:0"><a class="yf-link" href="https://finance.yahoo.com/quote/'+yfSym+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Open in Yahoo Finance" style="height:100%"><svg width="8" height="8" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg></a></div>';
-    r+='<div class="cell cell-name-col">'+esc(h.name)+'</div>';
+    r+='<div class="cell cell-name-col" data-hid="'+h.id+'">'+esc(h.name)+'</div>';
     if(isRollup)r+='<div class="cell" style="text-align:left">'+esc(h.accountName||'')+'</div>';
     r+='<div class="cell" style="text-align:left;font-size:11px;color:var(--text2)">'+esc(h.exchange||'')+'</div>';
     r+='<div class="cell">'+fmtShares(c.totalShares)+'</div>';
@@ -1470,7 +1470,8 @@ function lotsHTML(h,acc,isOpen){
   var realAccId=acc.id!=null?acc.id:(h.lots&&h.lots[0]&&h.lots[0]._accId!=null?h.lots[0]._accId:null);
   var addLotBtn=acc.id!=null?'<div class="add-lot-row"><button class="btn-ghost" onclick="openAddLot('+acc.id+',\''+h.id+'\')">+ Add Lot</button></div>':'';
   var manualToggle=!h.manualPrice&&realAccId!=null?'<div style="padding:3px 0 1px"><button class="btn-ghost" style="font-size:10px;color:var(--text2)" onclick="enableManualPrice('+realAccId+',\''+h.id+'\')">Enable manual price</button></div>':'';
-  return'<div class="'+panelClass+mpClass+'" id="lots_'+h.id+'"><div class="lots-head">'+hdr('Buy Date','date')+hdr('Amount','shares')+hdr(buyPriceHdr,'price')+curPriceHdr+fxHdrs+hdr('Commission','commission')+'<span>Invested</span><span>Actions</span></div>'+rows+(sorted.length>1?totalRow:'')+addLotBtn+manualToggle+'</div>';
+  var nameEdit=realAccId!=null?'<div style="padding:4px 0 2px;display:flex;align-items:center;gap:6px"><span style="font-size:9.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px">Name</span><input class="lot-inp" type="text" id="hname_'+h.id+'" value="'+esc(h.name||h.symbol)+'" style="width:220px" onchange="saveHoldingName('+realAccId+',\''+h.id+'\')"></div>':'';
+  return'<div class="'+panelClass+mpClass+'" id="lots_'+h.id+'">'+nameEdit+'<div class="lots-head">'+hdr('Buy Date','date')+hdr('Amount','shares')+hdr(buyPriceHdr,'price')+curPriceHdr+fxHdrs+hdr('Commission','commission')+'<span>Invested</span><span>Actions</span></div>'+rows+(sorted.length>1?totalRow:'')+addLotBtn+manualToggle+'</div>';
 }
 
 function bindHoldingClicks(container,isRollup){
@@ -2317,6 +2318,20 @@ var EXCH_CCY={'TOR':'CAD','CVE':'CAD','TSX':'CAD','LSE':'GBP','ASX':'AUD','TYO':
 function inferCurrency(exchange,currency){return currency||EXCH_CCY[exchange||'']||'USD';}
 var _symTimer=null,_symItems=[],_symIdx=-1,_selCurrency='USD',_selFxRate=1;
 function toggleManualCcy(){var checked=document.getElementById('posManualPrice').checked;var row=document.getElementById('posManualCcyRow');if(row)row.style.display=checked?'flex':'none';if(!checked){var mcp=document.getElementById('posManualCurrentPrice');if(mcp)mcp.value='';document.getElementById('posCurrentPrice').value='';}}
+function saveHoldingName(accId,hid){
+  var inp=document.getElementById('hname_'+hid);
+  if(!inp)return;
+  var val=inp.value.trim();
+  if(!val)return;
+  var acc=getAccount(accId);
+  var h=acc&&acc.holdings.find(function(hh){return hh.id===hid;});
+  if(!h)return;
+  h.name=val;
+  saveAll();
+  // update the name cell in the holding row without full re-render
+  var nameCell=document.querySelector('.cell-name-col[data-hid="'+hid+'"]');
+  if(nameCell)nameCell.textContent=val;
+}
 function enableManualPrice(accId,hid){
   var acc=getAccount(accId);
   var h=acc&&acc.holdings.find(function(hh){return hh.id===hid;});
