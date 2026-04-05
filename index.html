@@ -359,32 +359,37 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 <div class="modal-overlay" id="modalAddPos">
   <div class="modal modal-lg">
     <div class="modal-header"><div class="modal-title">Add Position</div><button class="modal-close" onclick="closeModal('modalAddPos')">&#x2715;</button></div>
-    <div class="modal-body">
-      <div class="section-label">Stock Info</div>
-      <div class="pos-row">
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:0">
+      <!-- Row 1: Symbol + Company Name -->
+      <div class="pos-row" style="margin-bottom:8px">
         <div class="pos-field pos-field-sym"><label>Symbol</label><div class="sym-wrap"><input type="text" id="posSymbol" placeholder="Search…" oninput="onSymbolInput()" onkeydown="onSymbolKey(event)" autocomplete="off" spellcheck="false"><div id="symDd" class="sym-dd"></div></div></div>
-        <div class="pos-field pos-field-exch"><label>Exchange</label><input type="text" id="posExchange" placeholder="NASDAQ"></div>
-        <div class="pos-field pos-field-name"><label>Company Name</label><input type="text" id="posName" placeholder="Apple Inc."></div>
+        <div class="pos-field" style="flex:1;min-width:160px"><label>Company Name</label><input type="text" id="posName" placeholder="Auto-filled from symbol"></div>
+      </div>
+      <!-- Row 2: Exchange + Current Price + Day Chg% -->
+      <div class="pos-row" style="margin-bottom:4px">
+        <div class="pos-field pos-field-exch"><label>Exchange</label><input type="text" id="posExchange" placeholder="e.g. NASDAQ"></div>
         <div class="pos-field pos-field-price"><label>Current Price</label><input type="number" id="posCurrentPrice" placeholder="0.00" step="0.01"></div>
         <div class="pos-field pos-field-chg"><label>Day Chg%</label><input type="number" id="posDayChg" placeholder="0.00" step="0.01"></div>
+        <div style="flex:1"></div>
       </div>
       <div class="pos-status" id="posStatus"></div>
-      <div style="margin:4px 0 2px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="posManualPrice" onchange="toggleManualCcy()" style="cursor:pointer"> Manual price — no live feed</label>
-        <div id="posManualCcyRow" style="display:none;align-items:center;gap:6px;flex-wrap:wrap">
-          <span style="font-size:12px;color:var(--text2)">Currency:</span>
-          <button type="button" id="posManualCcyUSD" class="ccy-btn active" onclick="setManualCcy('USD')" style="font-size:11px;padding:2px 8px">USD</button>
-          <button type="button" id="posManualCcyCAD" class="ccy-btn" onclick="setManualCcy('CAD')" style="font-size:11px;padding:2px 8px">CAD</button>
-          <span style="font-size:12px;color:var(--text2);margin-left:8px">Current Price:</span>
-          <input type="number" id="posManualCurrentPrice" step="0.01" placeholder="0.00" style="width:90px;font-size:12px;padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg)" oninput="document.getElementById('posCurrentPrice').value=this.value">
+      <!-- Manual price toggle -->
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:14px;flex-wrap:wrap">
+        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;white-space:nowrap"><input type="checkbox" id="posManualPrice" onchange="toggleManualCcy()" style="cursor:pointer"> Manual price — no live feed</label>
+        <div id="posManualCcyRow" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.4px">Currency:</span>
+          <button type="button" id="posManualCcyUSD" class="ccy-btn active" onclick="setManualCcy('USD')" style="font-size:11px;padding:2px 10px">USD</button>
+          <button type="button" id="posManualCcyCAD" class="ccy-btn" onclick="setManualCcy('CAD')" style="font-size:11px;padding:2px 10px">CAD</button>
+          <div class="pos-field" style="margin:0"><label>Current Price</label><input type="number" id="posManualCurrentPrice" step="0.01" placeholder="0.00" style="width:100px" oninput="document.getElementById('posCurrentPrice').value=this.value"></div>
         </div>
       </div>
+      <!-- Lot Info -->
       <div class="section-label">Lot Info</div>
       <div class="pos-row">
         <div class="pos-field pos-field-date"><label>Buy Date</label><input type="date" id="posDate" onchange="onPosDateChange()"></div>
         <div class="pos-field pos-field-shares"><label>Amount</label><input type="number" id="posShares" placeholder="0" step="0.001"></div>
         <div class="pos-field pos-field-pprice"><label id="posBuyPriceLabel">Buy Price</label><input type="number" id="posPurchasePrice" placeholder="0.00" step="0.01" oninput="updateBuyPriceUSD()"></div>
-        <div class="pos-field pos-field-comm"><label>Total Commission</label><input type="number" id="posCommission" placeholder="0.00" step="0.01" value="0"></div>
+        <div class="pos-field pos-field-comm"><label>Commission</label><input type="number" id="posCommission" placeholder="0.00" step="0.01" value="0"></div>
         <div class="pos-fx-inline" id="posFxRow" style="display:none">
           <div class="pos-field pos-field-fxrate"><label id="posFxRateLabel">FX Rate</label><input type="number" id="posFxRate" placeholder="1.3683" step="0.0001" oninput="updateBuyPriceUSD()"></div>
           <div class="pos-field pos-field-fxusd"><label>USD Equivalent</label><input type="number" id="posBuyPriceUSD" readonly placeholder="—"></div>
