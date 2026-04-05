@@ -1060,14 +1060,16 @@ function render(){
 function mergeHoldingsBySymbol(holdings){
   var map={},order=[];
   holdings.forEach(function(h){
+    // Tag each lot with its account so we can route edits correctly after merging
+    var taggedLots=(h.lots||[]).map(function(l){return Object.assign({},l,{_accId:h.accountId});});
     if(map[h.symbol]){
-      map[h.symbol].lots=(map[h.symbol].lots||[]).concat(h.lots||[]);
+      map[h.symbol].lots=(map[h.symbol].lots||[]).concat(taggedLots);
       map[h.symbol].dividends=(map[h.symbol].dividends||[]).concat(h.dividends||[]);
       if(!map[h.symbol].currentPrice&&h.currentPrice)map[h.symbol].currentPrice=h.currentPrice;
       if(!map[h.symbol].dayChangePct&&h.dayChangePct)map[h.symbol].dayChangePct=h.dayChangePct;
       map[h.symbol].accountId=null;map[h.symbol].accountName=''; // multi-account — no single owner
     }else{
-      map[h.symbol]=Object.assign({},h,{lots:(h.lots||[]).slice()}); // preserve accountId for single-account holdings
+      map[h.symbol]=Object.assign({},h,{lots:taggedLots});
       order.push(h.symbol);
     }
   });
@@ -1189,7 +1191,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
     r+='<div class="cell '+cc(totPnLRowPct)+'">'+fmtPct(totPnLRowPct)+'</div>';
     r+='<div class="cell cell-arrow'+(open?' open':'')+'">&#9658;</div>';
     r+='</div>';
-    if(rowAcc)r+=lotsHTML(h,rowAcc,open);
+    if(rowAcc||isRollup)r+=lotsHTML(h,rowAcc||{id:null},open);
     r+='</div>';
     return r;
   }).join('');
@@ -1358,22 +1360,23 @@ function lotsHTML(h,acc,isOpen){
     var fxDisp=fxToUSD>0?(1/fxToUSD).toFixed(4):'';
     var usdEquiv=fxToUSD>0?Math.round(l.price*fxToUSD).toLocaleString('en-US'):'';
     var nativeComm=fmtNative(l.commission||0,hCcy);
-    var fxCells=isNonUSD?'<input class="lot-inp" type="number" id="lot_fx_'+l.id+'" value="'+fxDisp+'" step="0.0001" min="0" oninput="updateLotInline(\''+l.id+'\')" onchange="saveLotInline('+acc.id+',\''+h.id+'\',\''+l.id+'\')"><div class="lot-val" id="lot_usdequiv_'+l.id+'">'+usdEquiv+'</div>':'';
+    var lAccId=l._accId!=null?l._accId:acc.id; // per-lot account for multi-account rollups
+    var fxCells=isNonUSD?'<input class="lot-inp" type="number" id="lot_fx_'+l.id+'" value="'+fxDisp+'" step="0.0001" min="0" oninput="updateLotInline(\''+l.id+'\')" onchange="saveLotInline('+lAccId+',\''+h.id+'\',\''+l.id+'\')"><div class="lot-val" id="lot_usdequiv_'+l.id+'">'+usdEquiv+'</div>':'';
     var invested=(l.shares||0)*(l.price||0)+(l.commission||0);
     var investedFx=isNonUSD?invested*fxToUSD:invested;
     totInvested+=investedFx;totShares+=(l.shares||0);
     var investedDisp=Math.round(investedFx).toLocaleString('en-US');
-    var curPriceCell=h.manualPrice?(isFirst?'<input class="lot-inp" type="number" id="manualPriceInput_'+h.id+'" value="'+(h.currentPrice||'')+'" step="0.01" placeholder="0.00" onchange="updateManualPrice(\''+h.id+'\','+acc.id+')">':'<div class="lot-val"></div>'):'';
+    var curPriceCell=h.manualPrice?(isFirst?'<input class="lot-inp" type="number" id="manualPriceInput_'+h.id+'" value="'+(h.currentPrice||'')+'" step="0.01" placeholder="0.00" onchange="updateManualPrice(\''+h.id+'\','+lAccId+')">':'<div class="lot-val"></div>'):'';
     isFirst=false;
     return'<div class="lot-row">'
-      +'<input class="lot-inp" type="date" id="lot_date_'+l.id+'" value="'+esc(l.date||'')+'" onchange="saveLotInline('+acc.id+',\''+h.id+'\',\''+l.id+'\')">'
-      +'<input class="lot-inp" type="number" id="lot_shares_'+l.id+'" value="'+(l.shares||'')+'" step="0.001" min="0" oninput="updateLotInline(\''+l.id+'\')" onchange="saveLotInline('+acc.id+',\''+h.id+'\',\''+l.id+'\')">'
-      +'<input class="lot-inp" type="number" id="lot_price_'+l.id+'" value="'+(l.price||'')+'" step="0.01" min="0" oninput="updateLotInline(\''+l.id+'\')" onchange="saveLotInline('+acc.id+',\''+h.id+'\',\''+l.id+'\')">'
+      +'<input class="lot-inp" type="date" id="lot_date_'+l.id+'" value="'+esc(l.date||'')+'" onchange="saveLotInline('+lAccId+',\''+h.id+'\',\''+l.id+'\')">'
+      +'<input class="lot-inp" type="number" id="lot_shares_'+l.id+'" value="'+(l.shares||'')+'" step="0.001" min="0" oninput="updateLotInline(\''+l.id+'\')" onchange="saveLotInline('+lAccId+',\''+h.id+'\',\''+l.id+'\')">'
+      +'<input class="lot-inp" type="number" id="lot_price_'+l.id+'" value="'+(l.price||'')+'" step="0.01" min="0" oninput="updateLotInline(\''+l.id+'\')" onchange="saveLotInline('+lAccId+',\''+h.id+'\',\''+l.id+'\')">'
       +curPriceCell
       +fxCells
-      +'<input class="lot-inp" type="number" id="lot_comm_'+l.id+'" value="'+(l.commission||0)+'" step="0.01" min="0" oninput="updateLotInline(\''+l.id+'\')" onchange="saveLotInline('+acc.id+',\''+h.id+'\',\''+l.id+'\')">'
+      +'<input class="lot-inp" type="number" id="lot_comm_'+l.id+'" value="'+(l.commission||0)+'" step="0.01" min="0" oninput="updateLotInline(\''+l.id+'\')" onchange="saveLotInline('+lAccId+',\''+h.id+'\',\''+l.id+'\')">'
       +'<div class="lot-val" id="lot_invested_'+l.id+'">'+investedDisp+'</div>'
-      +'<div class="lot-actions"><button class="btn-ghost" style="font-size:10px;color:var(--text2)" onclick="openClosePosition('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Sell Lot</button><button class="btn-ghost danger" onclick="confirmDeleteLot('+acc.id+',\''+h.id+'\',\''+l.id+'\')">Delete</button></div>'
+      +'<div class="lot-actions"><button class="btn-ghost" style="font-size:10px;color:var(--text2)" onclick="openClosePosition('+lAccId+',\''+h.id+'\',\''+l.id+'\')">Sell Lot</button><button class="btn-ghost danger" onclick="confirmDeleteLot('+lAccId+',\''+h.id+'\',\''+l.id+'\')">Delete</button></div>'
       +'</div>';
   }).join('');
   var totInvestedDisp=Math.round(totInvested).toLocaleString('en-US');
@@ -1384,7 +1387,8 @@ function lotsHTML(h,acc,isOpen){
   var curPriceHdr=h.manualPrice?'<span>Cur Price ('+hCcy+')</span>':'';
   var fxHdrs=isNonUSD?'<span>FX Rate</span><span>USD Equiv</span>':'';
   var mpClass=h.manualPrice?' manual-price':'';
-  return'<div class="'+panelClass+mpClass+'" id="lots_'+h.id+'"><div class="lots-head">'+hdr('Buy Date','date')+hdr('Amount','shares')+hdr(buyPriceHdr,'price')+curPriceHdr+fxHdrs+hdr('Commission','commission')+'<span>Invested</span><span>Actions</span></div>'+rows+(sorted.length>1?totalRow:'')+'<div class="add-lot-row"><button class="btn-ghost" onclick="openAddLot('+acc.id+',\''+h.id+'\')">+ Add Lot</button></div></div>';
+  var addLotBtn=acc.id!=null?'<div class="add-lot-row"><button class="btn-ghost" onclick="openAddLot('+acc.id+',\''+h.id+'\')">+ Add Lot</button></div>':'';
+  return'<div class="'+panelClass+mpClass+'" id="lots_'+h.id+'"><div class="lots-head">'+hdr('Buy Date','date')+hdr('Amount','shares')+hdr(buyPriceHdr,'price')+curPriceHdr+fxHdrs+hdr('Commission','commission')+'<span>Invested</span><span>Actions</span></div>'+rows+(sorted.length>1?totalRow:'')+addLotBtn+'</div>';
 }
 
 function bindHoldingClicks(container,isRollup){
