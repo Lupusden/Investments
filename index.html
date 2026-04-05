@@ -924,6 +924,8 @@ function toggleCashPanel(ccy,accId){
 // ---- TAB BAR ----
 function renderTabBar(){
   var bar=document.getElementById('tabBar');bar.innerHTML='';
+  var ovTab=mkTab('overview','Overview',false,false,false,null);ovTab.classList.add('tab-primary');bar.appendChild(ovTab);
+  bar.appendChild(mkDivider());
   var sumTab=mkTab('summary','Summary',false,false,false,null);sumTab.classList.add('tab-primary');bar.appendChild(sumTab);
   for(var i=0;i<appData.catOrder.length;i++){
     var catId=appData.catOrder[i];var cat=getCategory(catId);if(!cat)continue;
@@ -1131,7 +1133,8 @@ function autoSizeCols(card,isRollup){
 
 function render(){
   var content=document.getElementById('appContent');
-  if(activeTab==='summary'){renderSummary(content);}
+  if(activeTab==='overview'){renderOverview(content);}
+  else if(activeTab==='summary'){renderSummary(content);}
   else if(activeTab==='admin'){renderAdminPage(content);}
   else if(typeof activeTab==='string'&&activeTab.indexOf('cat_')===0){renderCategory(content,activeTab.replace('cat_',''));}
   else{var acc=getAccount(activeTab);if(!acc){content.innerHTML='<div class="empty-state">Account not found.</div>';return;}renderAccount(content,acc);}
@@ -1166,6 +1169,92 @@ function renderSummary(el){
   el.innerHTML=heroHTML('','Summary')+statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs)+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
   var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);
   bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);
+}
+
+function renderOverview(el){
+  var allAccs=appData.tabOrder.map(getAccount).filter(Boolean);
+  var gtv=0,gtc=0,gtic=0,gtd=0,gtfx=0,gtdiv=0;
+  allAccs.forEach(function(a){var s=calcAccountStats(a);gtv+=s.totalValue;gtc+=s.totalCost;gtic+=s.invCost;gtd+=s.totalDailyPnL;gtfx+=s.totalFxGain;gtdiv+=s.totalDividends;});
+  var gtp=gtv-gtc+gtdiv,gtpp=gtic>0?(gtp/gtic*100):0,gtsg=gtp-gtfx-gtdiv;
+
+  var cols='minmax(140px,2fr) 80px 80px 80px 80px 80px 80px 80px 80px 80px';
+  var hdrs=['Account','Invested','Mkt Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L%'];
+  var thStyle='font-size:9.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;padding:3px 8px;text-align:right;white-space:nowrap;';
+  var thead='<div style="display:grid;grid-template-columns:'+cols+';background:var(--bg);border-bottom:1px solid var(--border);padding:0 10px">'
+    +hdrs.map(function(h,i){return'<div style="'+thStyle+(i===0?'text-align:left':'')+'">'+h+'</div>';}).join('')
+    +'</div>';
+
+  function ccFmt(n){return'<span class="'+cc(n)+'">'+fmtC(n)+'</span>';}
+  function pFmt(n){return'<span class="'+cc(n)+'">'+fmtPct(n)+'</span>';}
+  function cell(v,i,cls){return'<div style="font-size:11px;padding:2px 8px;text-align:'+(i===0?'left':'right')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'+(cls||'')+'">'+v+'</div>';}
+
+  var rows='';
+  appData.catOrder.forEach(function(catId){
+    var cat=getCategory(catId);if(!cat)return;
+    var catAccs=allAccs.filter(function(a){return String(a.categoryId)===String(catId);});
+    if(!catAccs.length)return;
+    var ctv=0,ctc=0,ctic=0,ctd=0,ctfx=0,ctdiv=0;
+    catAccs.forEach(function(a){var s=calcAccountStats(a);ctv+=s.totalValue;ctc+=s.totalCost;ctic+=s.invCost;ctd+=s.totalDailyPnL;ctfx+=s.totalFxGain;ctdiv+=s.totalDividends;});
+    var ctp=ctv-ctc+ctdiv,ctpp=ctic>0?(ctp/ctic*100):0,ctsg=ctp-ctfx-ctdiv;
+    var ctdp=ctv>0?ctd/ctv*100:0;
+    // Category header row
+    rows+='<div style="display:grid;grid-template-columns:'+cols+';background:var(--surface2);border-bottom:1px solid var(--border);padding:0 10px;cursor:pointer" onclick="switchTab(\'cat_'+catId+'\')">'
+      +cell('<span style="font-size:11px;font-weight:700;color:var(--blue)">'+(cat.icon?cat.icon+' ':'')+esc(cat.name)+'</span>',0)
+      +cell(fmtC(ctc-catAccs.reduce(function(s,a){return s+getCashPortValue(a);},0)),1)
+      +cell(fmtC(ctv),2)
+      +cell(pFmt(ctdp),3)
+      +cell(ccFmt(ctd),4)
+      +cell(ccFmt(ctsg),5)
+      +cell(ccFmt(ctfx),6)
+      +cell(fmtC(ctdiv),7)
+      +cell(ccFmt(ctp),8)
+      +cell(pFmt(ctpp),9)
+      +'</div>';
+    // Account rows
+    catAccs.forEach(function(a){
+      var s=calcAccountStats(a);
+      var tp=s.totalValue-s.totalCost+s.totalDividends;
+      var tpp=s.invCost>0?(tp/s.invCost*100):0;
+      var tsg=tp-s.totalFxGain-s.totalDividends;
+      var tdp=s.totalValue>0?s.totalDailyPnL/s.totalValue*100:0;
+      var investedOnly=s.totalCost-getCashPortValue(a);
+      rows+='<div class="holding-row-wrap"><div style="display:grid;grid-template-columns:'+cols+';padding:0 10px;min-height:26px;align-items:center;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#fafafe\'" onmouseout="this.style.background=\'\'" onclick="switchTab('+a.id+')">'
+        +cell('<span style="font-size:11px;color:var(--text);padding-left:12px">'+esc(a.name)+'</span>',0)
+        +cell(fmtC(investedOnly),1)
+        +cell(fmtC(s.totalValue),2)
+        +cell(pFmt(tdp),3)
+        +cell(ccFmt(s.totalDailyPnL),4)
+        +cell(ccFmt(tsg),5)
+        +cell(ccFmt(s.totalFxGain),6)
+        +cell(fmtC(s.totalDividends),7)
+        +cell(ccFmt(tp),8)
+        +cell(pFmt(tpp),9)
+        +'</div></div>';
+    });
+  });
+
+  // Grand total row
+  var gtsg2=gtp-gtfx-gtdiv,gtdp=gtv>0?gtd/gtv*100:0;
+  var totalRow='<div style="display:grid;grid-template-columns:'+cols+';border-top:2px solid var(--border);padding:0 10px;min-height:28px;align-items:center;background:var(--bg)">'
+    +cell('<span style="font-size:11px;font-weight:700">Total</span>',0)
+    +cell('<span style="font-weight:600">'+fmtC(gtc-allAccs.reduce(function(s,a){return s+getCashPortValue(a);},0))+'</span>',1)
+    +cell('<span style="font-weight:600">'+fmtC(gtv)+'</span>',2)
+    +cell('<span class="'+cc(gtdp)+'" style="font-weight:600">'+fmtPct(gtdp)+'</span>',3)
+    +cell('<span class="'+cc(gtd)+'" style="font-weight:600">'+fmtC(gtd)+'</span>',4)
+    +cell('<span class="'+cc(gtsg2)+'" style="font-weight:600">'+fmtC(gtsg2)+'</span>',5)
+    +cell('<span class="'+cc(gtfx)+'" style="font-weight:600">'+fmtC(gtfx)+'</span>',6)
+    +cell('<span style="font-weight:600">'+fmtC(gtdiv)+'</span>',7)
+    +cell('<span class="'+cc(gtp)+'" style="font-weight:600">'+fmtC(gtp)+'</span>',8)
+    +cell('<span class="'+cc(gtpp)+'" style="font-weight:600">'+fmtPct(gtpp)+'</span>',9)
+    +'</div>';
+
+  var table='<div class="holdings-card" style="margin-bottom:16px">'+
+    '<div class="holdings-header"><span class="holdings-title">Portfolio Overview</span></div>'+
+    thead+rows+totalRow+
+    '</div>';
+
+  el.innerHTML=heroHTML('','Overview')+statsHTML(gtv,gtc,gtp,gtpp,gtd,gtfx,gtsg,allAccs,gtdiv)+table;
+  anim(el);
 }
 
 function renderCategory(el,catId){
