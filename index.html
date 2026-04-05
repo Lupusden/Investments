@@ -179,8 +179,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .progress-fill{height:100%;border-radius:3px;transition:width .6s ease}
 .ret-card{background:var(--card);border-radius:var(--radius);padding:14px 18px 12px;box-shadow:var(--shadow);border:1px solid var(--border-light);flex:1;overflow:hidden;min-width:0}
 .ret-title{font-size:13px;font-weight:700;margin-bottom:12px}
-.ret-row{display:grid;grid-template-columns:36px 1fr 44px;align-items:center;gap:6px;margin-bottom:7px}
-.ret-lbl{font-size:10px;font-weight:600;color:var(--text2);white-space:nowrap}
+.ret-row{display:grid;grid-template-columns:52px 1fr 50px;align-items:center;gap:6px;margin-bottom:6px}
+.ret-lbl{font-size:10px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ret-divider{border:none;border-top:1px solid var(--border-light);margin:6px 0}
 .ret-track{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;position:relative}
 .ret-bar{height:100%;border-radius:4px;transition:width .5s ease;min-width:2px}
 .ret-bar.pos{background:var(--green-text)}
@@ -2109,72 +2110,58 @@ function showPortBreakdown(canvasId,date){
   bd.innerHTML=html;bd.style.display='block';
 }
 
-// ---- PERIOD RETURNS WIDGET ----
-// ---- PERIOD RETURNS ----
-// Uses actual historical portfolio values from chart data (same source as portfolio chart).
-// No extra API calls — data is already fetched and cached by initPortfolioChart.
-var _portHistFull=null; // {dates:[], portValues:[]} — set by _onChartDataReady
-var _retHoldings=[];
+// ---- TOP MOVERS WIDGET ----
+var _moversMode='day'; // 'day' or 'total'
+var _moversHoldings=[];
 
-function _onChartDataReady(data){
-  _portHistFull=data;
-  var card=document.getElementById('retCard');
-  if(card&&_retHoldings.length)card.innerHTML=_buildReturnsInner(_retHoldings);
-}
-
-function _getPeriodRet(daysAgo,ytd){
-  if(!_portHistFull)return null;
-  var dates=_portHistFull.dates,vals=_portHistFull.portValues;
-  if(!dates||dates.length<2)return null;
-  var cutoff=ytd?(new Date().getFullYear()+'-01-01'):new Date(Date.now()-daysAgo*86400000).toISOString().slice(0,10);
-  // Find last date on or before cutoff
-  var startVal=null;
-  for(var i=0;i<dates.length;i++){if(dates[i]<=cutoff)startVal=vals[i];}
-  if(startVal===null||startVal<=0)return null;
-  var endVal=vals[vals.length-1];
-  return(endVal-startVal)/startVal*100;
-}
-
-function _calcDayReturn(holdings){
-  var totalMV=0,weightedSum=0;
-  holdings.forEach(function(h){
-    if(h.dayChangePct==null)return;
-    var c=calcHolding(h);
-    if(c.marketValue<=0)return;
-    weightedSum+=h.dayChangePct*c.marketValue;
-    totalMV+=c.marketValue;
-  });
-  if(totalMV<=0)return null;
-  return weightedSum/totalMV;
-}
-
-function _retRow(label,pct,maxAbs){
-  if(pct===null)return'<div class="ret-row"><div class="ret-lbl">'+label+'</div><div style="grid-column:2/4"></div></div>';
+function _moverRow(sym,pct,maxAbs){
   var cls=pct>=0?'pos':'neg';
   var barW=maxAbs>0?Math.min(Math.abs(pct)/maxAbs*100,100):0;
   var sign=pct>=0?'+':'';
-  return'<div class="ret-row"><div class="ret-lbl">'+label+'</div><div class="ret-track"><div class="ret-bar '+cls+'" style="width:'+barW.toFixed(1)+'%"></div></div><div class="ret-pct '+cls+'">'+sign+fmt(pct,1)+'%</div></div>';
+  return'<div class="ret-row"><div class="ret-lbl" title="'+esc(sym)+'">'+esc(sym)+'</div><div class="ret-track"><div class="ret-bar '+cls+'" style="width:'+barW.toFixed(1)+'%"></div></div><div class="ret-pct '+cls+'">'+sign+fmt(pct,1)+'%</div></div>';
 }
 
-function _buildReturnsInner(holdings){
-  var periods=[
-    {label:'1D',  pct:_calcDayReturn(holdings)},
-    {label:'1W',  pct:_getPeriodRet(7)},
-    {label:'1M',  pct:_getPeriodRet(30)},
-    {label:'YTD', pct:_getPeriodRet(0,true)},
-    {label:'12M', pct:_getPeriodRet(365)},
-    {label:'5Y',  pct:_getPeriodRet(1825)},
-    {label:'Max', pct:_getPeriodRet(36500)}
-  ];
-  var maxAbs=periods.reduce(function(m,p){return p.pct!==null?Math.max(m,Math.abs(p.pct)):m;},0.001);
-  return'<div class="ret-title">Returns</div>'+periods.map(function(p){return _retRow(p.label,p.pct,maxAbs);}).join('');
+function _buildMoversInner(holdings,mode){
+  var rows=[];
+  holdings.forEach(function(h){
+    var c=calcHolding(h);
+    if(c.marketValue<=0)return;
+    var pct=mode==='day'?(h.dayChangePct||0):(c.totalCost>0?(c.netPnL/c.totalCost*100):null);
+    if(pct===null)return;
+    rows.push({sym:h.symbol,pct:pct});
+  });
+  if(!rows.length)return'<div class="ret-none">No data</div>';
+  rows.sort(function(a,b){return b.pct-a.pct;});
+  var N=5;
+  var winners=rows.slice(0,N).filter(function(r){return r.pct>0;});
+  var losers=rows.slice(-N).filter(function(r){return r.pct<0;}).reverse();
+  var all=winners.concat(losers);
+  if(!all.length)all=rows.slice(0,Math.min(N,rows.length));
+  var maxAbs=all.reduce(function(m,r){return Math.max(m,Math.abs(r.pct));},0.001);
+  var modeBtn=function(id,label){return'<button onclick="setMoversMode(''+id+'')" style="padding:1px 8px;font-size:10px;font-weight:600;border-radius:10px;border:1px solid var(--border);cursor:pointer;font-family:inherit;transition:all .15s;'+(mode===id?'background:var(--blue);color:#fff;border-color:var(--blue)':'background:transparent;color:var(--text2)')+'">'+label+'</button>';};
+  var header='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div class="ret-title" style="margin:0">Top Movers</div><div style="display:flex;gap:4px">'+modeBtn('day','Today')+modeBtn('total','Total')+'</div></div>';
+  var winHTML=winners.length?winners.map(function(r){return _moverRow(r.sym,r.pct,maxAbs);}).join(''):'';
+  var loseHTML=losers.length?losers.map(function(r){return _moverRow(r.sym,r.pct,maxAbs);}).join(''):'';
+  var divider=winners.length&&losers.length?'<hr class="ret-divider">':'';
+  return header+winHTML+divider+loseHTML;
+}
+
+function setMoversMode(mode){
+  _moversMode=mode;
+  var card=document.getElementById('retCard');
+  if(card&&_moversHoldings.length)card.innerHTML=_buildMoversInner(_moversHoldings,mode);
 }
 
 function perfHTML(holdings){
-  _retHoldings=holdings;
-  if(!holdings.length)return'<div class="ret-card" id="retCard"><div class="ret-title">Returns</div><div class="empty-state" style="padding:20px">No data</div></div>';
-  return'<div class="ret-card" id="retCard">'+_buildReturnsInner(holdings)+'</div>';
+  _moversHoldings=holdings;
+  if(!holdings.length)return'<div class="ret-card" id="retCard"><div class="ret-title">Top Movers</div><div class="empty-state" style="padding:20px">No data</div></div>';
+  return'<div class="ret-card" id="retCard">'+_buildMoversInner(holdings,_moversMode)+'</div>';
 }
+
+// stub so chart code does not break
+var _portHistFull=null;
+function _onChartDataReady(data){_portHistFull=data;}
+
 
 // ---- TRADES VIEW ----
 function renderTrades(el,acc){
