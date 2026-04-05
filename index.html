@@ -1235,7 +1235,7 @@ function sCard(label,val,sub,color){return '<div class="stat-card"><div class="s
 
 // ---- HOLDINGS TABLE ----
 function holdingsHTML(holdings,isRollup,acc,accsForCash){
-  var hdrs=isRollup?['Ticker','Web','Name','Account','Exchange','Amount','Avg Price','Invested','Current Price','Market Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %','']:['Ticker','Web','Name','Exchange','Amount','Avg Price','Invested','Current Price','Market Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %',''];
+  var hdrs=isRollup?['Ticker','Web','Name','Account','Exchange','Amount','Cost Price','Invested','Mkt Price','Market Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %','']:['Ticker','Web','Name','Exchange','Amount','Cost Price','Invested','Mkt Price','Market Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %',''];
   var sorted=holdings.slice();
   if(sortCol>=0&&sortCol<hdrs.length){sorted.sort(function(a,b){var va=gSV(a,sortCol,isRollup),vb=gSV(b,sortCol,isRollup);return(va<vb?-1:va>vb?1:0)*sortDir;});}
   var rc=isRollup?' rollup':'';
@@ -1256,9 +1256,9 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
     if(isRollup)r+='<div class="cell" style="text-align:left">'+esc(h.accountName||'')+'</div>';
     r+='<div class="cell" style="text-align:left;font-size:11px;color:var(--text2)">'+esc(h.exchange||'')+'</div>';
     r+='<div class="cell">'+fmtShares(c.totalShares)+'</div>';
-    r+='<div class="cell">'+fmtC(c.avgPrice)+'</div>';
+    r+='<div class="cell">'+fmtC(c.avgPrice,2)+'</div>';
     r+='<div class="cell">'+fmtC(c.totalCost)+'</div>';
-    r+='<div class="cell">'+fmtC(h.currentPrice*getFxFactor(h))+'</div>';
+    r+='<div class="cell">'+fmtC(h.currentPrice*getFxFactor(h),2)+'</div>';
     r+='<div class="cell">'+fmtC(c.marketValue)+'</div>';
     r+='<div class="cell '+cc(c.dailyPnLPct)+'">'+fmtPct(c.dailyPnLPct)+'</div>';
     r+='<div class="cell '+cc(c.dailyPnL)+'">'+fmtC(c.dailyPnL)+'</div>';
