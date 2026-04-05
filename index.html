@@ -3156,30 +3156,42 @@ function parseImportRows(data){
     document.getElementById('importErrors').textContent=errors.length?errors.join(' '):'';
     return;
   }
+  // Detect if this is a backup export (has Account column) — auto-route to accounts
+  var hasAccountCol=data.length>0&&!!findCol(data[0],['account','accountname']);
+  var accSel=document.getElementById('importAccSel');
+  if(accSel)accSel.parentElement.style.display=hasAccountCol?'none':'';
+  var thead=document.getElementById('importThead');
+  if(thead&&hasAccountCol){
+    var thStyle='padding:5px 8px;text-align:left;font-size:9.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;border-bottom:1px solid var(--border)';
+    thead.innerHTML='<tr style="background:var(--surface2);position:sticky;top:0"><th style="'+thStyle+'">#</th><th style="'+thStyle+'">Account</th><th style="'+thStyle+'">Symbol</th><th style="'+thStyle+'">Name</th><th style="'+thStyle+'">Exchange</th><th style="'+thStyle+'">Currency</th><th style="'+thStyle+'">Date</th><th style="padding:5px 8px;text-align:right;font-size:9.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;border-bottom:1px solid var(--border)">Units</th><th style="padding:5px 8px;text-align:right;font-size:9.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;border-bottom:1px solid var(--border)">Price</th><th style="'+thStyle+'">Status</th></tr>';
+  }
   data.forEach(function(obj,idx){
+    var accountName=(findCol(obj,['account','accountname'])||'').trim();
     var sym=(findCol(obj,['symbol','ticker','stock'])||'').trim().toUpperCase();
     var name=(findCol(obj,['name','companyname','stockname'])||'').trim();
     var exchangeRaw=(findCol(obj,['exchange','market','exch'])||'').trim().toUpperCase();
     var currency=(findCol(obj,['currency','ccy','curr'])||'').trim().toUpperCase();
-    var dateRaw=findCol(obj,['transactiondate','date','tradedate','txndate','purchasedate','buydate']);
+    var dateRaw=findCol(obj,['transactiondate','date','tradedate','txndate','purchasedate','buydate','lotdate']);
     var date=parseImportDate(dateRaw);
-    var units=parseFloat((findCol(obj,['units','shares','quantity','qty','amount'])||'0').replace(/,/g,''));
-    var price=parseFloat((findCol(obj,['price','purchaseprice','buyprice','cost'])||'0').replace(/,/g,''));
-    var ok=sym&&currency&&units>0&&price>0&&date;
-    if(!ok)errors.push('Row '+(idx+2)+': missing required field(s).');
+    var units=parseFloat((findCol(obj,['units','shares','quantity','qty'])||'0').replace(/,/g,''));
+    var price=parseFloat((findCol(obj,['price','purchaseprice','buyprice','buyprice','cost'])||'0').replace(/,/g,''));
+    // When account column present, validate account name resolves
+    var accMatch=hasAccountCol?appData.accounts.find(function(a){return a.name.trim().toLowerCase()===accountName.toLowerCase();}):true;
+    var ok=sym&&currency&&units>0&&price>0&&date&&accMatch;
+    if(!ok)errors.push('Row '+(idx+2)+': missing required field(s)'+(hasAccountCol&&!accMatch?' (account "'+accountName+'" not found)':'')+'.');
     var exchange=exchangeRaw||inferExchange(currency);
     var rowIdx=-1;
     if(ok){
       rowIdx=_importRows.length;
-      _importRows.push({sym:sym,name:name,exchange:exchange,currency:currency,date:date,units:units,price:price});
+      _importRows.push({sym:sym,name:name,exchange:exchange,currency:currency,date:date,units:units,price:price,account:accountName});
     }
     var exchCell=ok?buildExchSelectHTML(exchange,rowIdx):'<span style="color:var(--text2)">'+esc(exchange||'—')+'</span>';
     var status=!ok
-      ?'<span style="color:var(--red-text)">Missing: '+(sym?'':'Symbol ')+(currency?'':'Currency ')+(units>0?'':'Units ')+(price>0?'':'Price ')+(date?'':'Date')+'</span>'
+      ?'<span style="color:var(--red-text)">Missing: '+(sym?'':'Symbol ')+(currency?'':'Currency ')+(units>0?'':'Units ')+(price>0?'':'Price ')+(date?'':'Date ')+(hasAccountCol&&!accMatch?'(account not found)':'')+'</span>'
       :'<span style="color:var(--green-text)">OK</span>';
     var tr=document.createElement('tr');
     tr.style.borderBottom='1px solid var(--border)';
-    tr.innerHTML='<td style="padding:4px 8px;color:var(--text2)">'+(idx+1)+'</td>'
+    tr.innerHTML=(hasAccountCol?'<td style="padding:4px 8px;color:var(--text2)">'+(idx+1)+'</td><td style="padding:4px 8px;color:var(--blue)">'+esc(accountName||'—')+'</td>':'<td style="padding:4px 8px;color:var(--text2)">'+(idx+1)+'</td>')
       +'<td style="padding:4px 8px;font-weight:600">'+esc(sym||'—')+'</td>'
       +'<td style="padding:4px 8px;color:var(--text2)">'+esc(name||'—')+'</td>'
       +'<td style="padding:4px 8px">'+exchCell+'</td>'
@@ -3263,24 +3275,34 @@ function doImport(){
     alert('Imported '+added+' dividend record'+(added===1?'':'s')+' into "'+acc.name+'".'+(skipped?' '+skipped+' skipped (symbol not found).':''));
     return;
   }
+  var byAccount={};
   _importRows.forEach(function(row){
+    var target=acc;
+    if(row.account){
+      var match=appData.accounts.find(function(a){return a.name.trim().toLowerCase()===row.account.toLowerCase();});
+      if(match)target=match;
+    }
+    if(!target.holdings)target.holdings=[];
+    if(!target.trades)target.trades=[];
     var ccy=row.currency||'USD';
     var fxToUSD=ccy==='USD'?1:(ccy==='CAD'?_cadUsdRate:1);
     var flag=exchFlag(row.exchange,ccy);
     var pFx=approxPurchaseFx(row.date);
     var lotFxRate=ccy==='CAD'?pFx:1;
-    var h=acc.holdings.find(function(hh){return hh.symbol===row.sym;});
+    var h=target.holdings.find(function(hh){return hh.symbol===row.sym;});
     if(h){
       h.lots.push({id:mkUid(),date:row.date,shares:row.units,price:row.price,commission:0,fxRate:lotFxRate,purchaseFx:pFx});
     }else{
-      acc.holdings.push({id:'h'+mkUid(),symbol:row.sym,name:row.name||row.sym,flag:flag,exchange:row.exchange,currency:ccy,fxRateToUSD:fxToUSD,currentPrice:row.price,dayChangePct:0,lots:[{id:mkUid(),date:row.date,shares:row.units,price:row.price,commission:0,fxRate:lotFxRate,purchaseFx:pFx}]});
+      target.holdings.push({id:'h'+mkUid(),symbol:row.sym,name:row.name||row.sym,flag:flag,exchange:row.exchange,currency:ccy,fxRateToUSD:fxToUSD,currentPrice:row.price,dayChangePct:0,lots:[{id:mkUid(),date:row.date,shares:row.units,price:row.price,commission:0,fxRate:lotFxRate,purchaseFx:pFx}]});
     }
-    acc.trades.push({id:mkUid(),symbol:row.sym,name:row.name||row.sym,flag:flag,type:'buy',shares:row.units,price:row.price,date:row.date,commission:0,pnl:null});
+    target.trades.push({id:mkUid(),symbol:row.sym,name:row.name||row.sym,flag:flag,type:'buy',shares:row.units,price:row.price,date:row.date,commission:0,pnl:null});
+    byAccount[target.name]=(byAccount[target.name]||0)+1;
     added++;
   });
   saveAll();render();
   closeModal('modalImport');
-  alert('Imported '+added+' transaction'+(added===1?'':'s')+' into "'+acc.name+'". Fetching live prices…');
+  var summary=Object.keys(byAccount).map(function(n){return n+': '+byAccount[n];}).join(', ');
+  alert('Imported '+added+' transaction'+(added===1?'':'s')+(summary?' ('+summary+')':' into "'+acc.name+'"')+'. Fetching live prices…');
   fetchAllPrices();
 }
 
