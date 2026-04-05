@@ -1467,8 +1467,10 @@ function lotsHTML(h,acc,isOpen){
   var curPriceHdr=h.manualPrice?'<span>Cur Price ('+hCcy+')</span>':'';
   var fxHdrs=isNonUSD?'<span>FX Rate</span><span>USD Equiv</span>':'';
   var mpClass=h.manualPrice?' manual-price':'';
+  var realAccId=acc.id!=null?acc.id:(h.lots&&h.lots[0]&&h.lots[0]._accId!=null?h.lots[0]._accId:null);
   var addLotBtn=acc.id!=null?'<div class="add-lot-row"><button class="btn-ghost" onclick="openAddLot('+acc.id+',\''+h.id+'\')">+ Add Lot</button></div>':'';
-  return'<div class="'+panelClass+mpClass+'" id="lots_'+h.id+'"><div class="lots-head">'+hdr('Buy Date','date')+hdr('Amount','shares')+hdr(buyPriceHdr,'price')+curPriceHdr+fxHdrs+hdr('Commission','commission')+'<span>Invested</span><span>Actions</span></div>'+rows+(sorted.length>1?totalRow:'')+addLotBtn+'</div>';
+  var manualToggle=!h.manualPrice&&realAccId!=null?'<div style="padding:3px 0 1px"><button class="btn-ghost" style="font-size:10px;color:var(--text2)" onclick="enableManualPrice('+realAccId+',\''+h.id+'\')">Enable manual price</button></div>':'';
+  return'<div class="'+panelClass+mpClass+'" id="lots_'+h.id+'"><div class="lots-head">'+hdr('Buy Date','date')+hdr('Amount','shares')+hdr(buyPriceHdr,'price')+curPriceHdr+fxHdrs+hdr('Commission','commission')+'<span>Invested</span><span>Actions</span></div>'+rows+(sorted.length>1?totalRow:'')+addLotBtn+manualToggle+'</div>';
 }
 
 function bindHoldingClicks(container,isRollup){
@@ -2315,6 +2317,13 @@ var EXCH_CCY={'TOR':'CAD','CVE':'CAD','TSX':'CAD','LSE':'GBP','ASX':'AUD','TYO':
 function inferCurrency(exchange,currency){return currency||EXCH_CCY[exchange||'']||'USD';}
 var _symTimer=null,_symItems=[],_symIdx=-1,_selCurrency='USD',_selFxRate=1;
 function toggleManualCcy(){var checked=document.getElementById('posManualPrice').checked;var row=document.getElementById('posManualCcyRow');if(row)row.style.display=checked?'flex':'none';if(!checked){var mcp=document.getElementById('posManualCurrentPrice');if(mcp)mcp.value='';document.getElementById('posCurrentPrice').value='';}}
+function enableManualPrice(accId,hid){
+  var acc=getAccount(accId);
+  var h=acc&&acc.holdings.find(function(hh){return hh.id===hid;});
+  if(!h)return;
+  h.manualPrice=true;
+  saveAll();render();
+}
 function updateManualPrice(hid,accId){
   var inp=document.getElementById('manualPriceInput_'+hid);
   if(!inp)return;
