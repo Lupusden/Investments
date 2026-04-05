@@ -2138,7 +2138,7 @@ function _buildMoversInner(holdings,mode){
   var all=winners.concat(losers);
   if(!all.length)all=rows.slice(0,Math.min(N,rows.length));
   var maxAbs=all.reduce(function(m,r){return Math.max(m,Math.abs(r.pct));},0.001);
-  var modeBtn=function(id,label){return'<button onclick="setMoversMode(''+id+'')" style="padding:1px 8px;font-size:10px;font-weight:600;border-radius:10px;border:1px solid var(--border);cursor:pointer;font-family:inherit;transition:all .15s;'+(mode===id?'background:var(--blue);color:#fff;border-color:var(--blue)':'background:transparent;color:var(--text2)')+'">'+label+'</button>';};
+  var modeBtn=function(id,label){return'<button onclick="setMoversMode(\''+id+'\')" style="padding:1px 8px;font-size:10px;font-weight:600;border-radius:10px;border:1px solid var(--border);cursor:pointer;font-family:inherit;transition:all .15s;'+(mode===id?'background:var(--blue);color:#fff;border-color:var(--blue)':'background:transparent;color:var(--text2)')+'">'+label+'</button>';};
   var header='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div class="ret-title" style="margin:0">Top Movers</div><div style="display:flex;gap:4px">'+modeBtn('day','Today')+modeBtn('total','Total')+'</div></div>';
   var winHTML=winners.length?winners.map(function(r){return _moverRow(r.sym,r.pct,maxAbs);}).join(''):'';
   var loseHTML=losers.length?losers.map(function(r){return _moverRow(r.sym,r.pct,maxAbs);}).join(''):'';
