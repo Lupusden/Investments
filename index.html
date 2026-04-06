@@ -103,9 +103,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .hero-category{font-size:10px;font-weight:500;color:var(--text2);display:flex;align-items:center;gap:5px;margin-bottom:1px}
 .hero-cat-icon{font-size:11px}
 .hero-title{font-size:14px;font-weight:700;letter-spacing:-0.2px;color:var(--text)}
-.nav-stats-bar{padding:4px 48px 5px;border-top:1px solid rgba(0,0,0,.06);}
+.nav-stats-bar{padding:4px 48px 5px;border-top:1px solid rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between;gap:12px;}
 .nav-stats-bar:empty{display:none;}
-.stats-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin-bottom:6px}
+.stats-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;flex:1;margin-bottom:0}
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
 .stat-card{background:var(--card);border-radius:var(--radius-sm);padding:3px 8px;box-shadow:var(--shadow-sm);border:1px solid var(--border-light)}
 .stat-label{font-size:9px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px}
@@ -113,14 +113,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .stat-val-row{display:flex;align-items:baseline;justify-content:space-between;gap:4px}
 .stat-sub{font-size:9.5px;color:var(--text2);white-space:nowrap}
 .stat-last-col{display:flex;flex-direction:column;gap:2px}
-.holdings-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto;overflow-y:visible;border:1px solid var(--border-light)}
-.holdings-header{padding:5px 10px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--surface2)}
+.holdings-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:visible;border:1px solid var(--border-light)}
+.holdings-header{padding:5px 10px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--surface2);position:sticky;top:var(--nav-h,90px);z-index:50;background:var(--card);border-radius:var(--radius) var(--radius) 0 0;}
 .holdings-title{font-size:11px;font-weight:700}
 .btn-add{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-pill);font-size:12px;font-weight:500;cursor:pointer;transition:filter .15s;font-family:inherit;letter-spacing:-.01em}
 .btn-add:hover{filter:brightness(.93)}
 .btn-sm{padding:4px 10px;font-size:11.5px}
-.holdings-rows{}
-.tbl-head{display:grid;grid-template-columns:var(--cols);gap:0;padding:0 10px;background:var(--bg);border-bottom:1px solid var(--border)}
+.holdings-rows{overflow-x:auto;}
+.tbl-head{display:grid;grid-template-columns:var(--cols);gap:0;padding:0 10px;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:calc(var(--nav-h,90px) + 29px);z-index:49;}
 .tbl-head.rollup{grid-template-columns:var(--rollup-cols)}
 .tbl-col{padding:3px 4px;font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;cursor:pointer;white-space:nowrap;user-select:none;display:flex;align-items:center;gap:3px}
 .tbl-col:hover{color:var(--text)}
@@ -1138,6 +1138,16 @@ function autoSizeCols(card,isRollup){
   card.style.setProperty(isRollup?'--rollup-cols':'--cols',tpl);
 }
 
+function _syncTblHeadScroll(){
+  // Sync .tbl-head horizontal scroll with .holdings-rows (they share column widths but tbl-head is outside overflow container)
+  document.querySelectorAll('.holdings-card').forEach(function(card){
+    var head=card.querySelector('.tbl-head');
+    var rows=card.querySelector('.holdings-rows');
+    if(!head||!rows||rows._scrollBound)return;
+    rows._scrollBound=true;
+    rows.addEventListener('scroll',function(){head.style.transform='translateX(-'+rows.scrollLeft+'px)';});
+  });
+}
 function render(){
   var content=document.getElementById('appContent');
   if(activeTab==='overview'){renderOverview(content);}
@@ -1145,6 +1155,7 @@ function render(){
   else if(activeTab==='admin'){renderAdminPage(content);}
   else if(typeof activeTab==='string'&&activeTab.indexOf('cat_')===0){renderCategory(content,activeTab.replace('cat_',''));}
   else{var acc=getAccount(activeTab);if(!acc){content.innerHTML='<div class="empty-state">Account not found.</div>';return;}renderAccount(content,acc);}
+  requestAnimationFrame(_syncTblHeadScroll);
 }
 
 function mergeHoldingsBySymbol(holdings){
@@ -1313,7 +1324,7 @@ function renderAccount(el,acc){
 
 function heroHTML(catName,title){
   var catLine=catName?'<div class="hero-category">'+esc(catName)+'</div>':'';
-  return '<div class="hero"><div>'+catLine+'<h1 class="hero-title">'+title+'</h1></div>'+ccyToggleHTML()+'</div>';
+  return '<div class="hero"><div>'+catLine+'<h1 class="hero-title">'+title+'</h1></div></div>';
 }
 function infoBanner(accs){return '<div class="info-banner"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor"/><path d="M7 5.5v3M7 4v.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/></svg> Showing data from: <strong>'+accs.map(function(a){return esc(a.name);}).join(', ')+'</strong></div>';}
 function ccyToggleHTML(){
@@ -1341,7 +1352,7 @@ function statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv){
     sCard('Dividends',fmtC(tdiv),fmtPct(tdivp),tdiv>=0?'var(--green-text)':'var(--text2)')+
     sCard('Total Gain / Loss',fmtC(tp),fmtPct(tpp),tp>=0?'var(--green-text)':'var(--red-text)')+
   '</div>';
-  var sb=document.getElementById('statsBar');if(sb)sb.innerHTML=inner;
+  var sb=document.getElementById('statsBar');if(sb)sb.innerHTML=inner+ccyToggleHTML();
   return '';
 }
 function cashStatCard(accs){
@@ -3802,6 +3813,10 @@ firebase.auth().onAuthStateChanged(function(user){
   }
 });
 // ---- INIT ----
+function _updateNavH(){
+  var nav=document.querySelector('.nav');
+  if(nav)document.documentElement.style.setProperty('--nav-h',nav.offsetHeight+'px');
+}
 function initApp(){
   _chartCachePurgeOldKeys();
   _lastSync=new Date();
@@ -3810,6 +3825,8 @@ function initApp(){
   fetchCadRate();fetchAllPrices();
   updateSyncDisplay();
   setInterval(function(){doRefresh();},300000);
+  requestAnimationFrame(_updateNavH);
+  new ResizeObserver(_updateNavH).observe(document.querySelector('.nav'));
 }
 </script>
 </body>
