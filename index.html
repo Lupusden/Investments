@@ -1699,15 +1699,22 @@ var _portOverlayCache={};
 var _portRenderChartsGlobal=null,_portChartDataGlobal=null;
 function _syncChartToday(){if(_portRenderChartsGlobal&&_portChartDataGlobal)_portRenderChartsGlobal(_portChartDataGlobal);}
 
-// Charts always render in USD regardless of _portfolioCurrency toggle.
-// _chartFx converts a holding's native trading currency → USD.
+// _chartFx converts a holding's native trading currency → _portfolioCurrency.
 function _chartFx(h){
   var ccy=(h.currency||'USD').toUpperCase();
-  return ccy==='CAD'?(_cadUsdRate||1):(h.fxRateToUSD||1);
+  if(_portfolioCurrency==='USD'){
+    return ccy==='CAD'?(_cadUsdRate||1):(h.fxRateToUSD||1);
+  }else{ // CAD
+    if(ccy==='CAD')return 1;
+    if(ccy==='USD')return _cadUsdRate>0?(1/_cadUsdRate):1;
+    return (h.fxRateToUSD||1)*(_cadUsdRate>0?(1/_cadUsdRate):1);
+  }
 }
-// Chart cost basis always in USD: (shares*price+comm) * lot's original FX rate to USD
+// Chart cost basis in _portfolioCurrency
 function _chartCostBasis(lot,h){
-  return(lot.shares*lot.price+(lot.commission||0))*(lot.fxRate||h.fxRateToUSD||1);
+  var usdCost=(lot.shares*lot.price+(lot.commission||0))*(lot.fxRate||h.fxRateToUSD||1);
+  if(_portfolioCurrency==='CAD')return _cadUsdRate>0?usdCost/_cadUsdRate:usdCost;
+  return usdCost;
 }
 
 // How many days back each range covers (null = unlimited)
@@ -2487,7 +2494,7 @@ function getFxFactor(h){
   if(_portfolioCurrency==='CAD'){if(hCcy==='USD')return _cadUsdRate>0?(1/_cadUsdRate):1;if(hCcy==='CAD')return 1;return fxToUSD*(_cadUsdRate>0?(1/_cadUsdRate):1);}
   return 1;
 }
-function setCurrency(c){_portfolioCurrency=c;_portCache={};render();}
+function setCurrency(c){_portfolioCurrency=c;_portCache={};_portHoldingSeries=[];render();}
 async function fetchCadRate(){
   try{var url='https://query1.finance.yahoo.com/v8/finance/chart/CADUSD%3DX?interval=1d&range=1d';var d=await yahooFetch(url);var meta=d.chart&&d.chart.result&&d.chart.result[0]&&d.chart.result[0].meta;if(meta&&meta.regularMarketPrice)_cadUsdRate=meta.regularMarketPrice;}catch(e){}
 }
