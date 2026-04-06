@@ -2104,10 +2104,11 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
   var dpr=window.devicePixelRatio||1;
   var W=canvas.parentElement.clientWidth||600;
   var H=220;
-  canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
-  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  var newW=Math.round(W*dpr),newH=Math.round(H*dpr);
+  // Only resize (which resets transform) when dimensions actually change
+  if(canvas.width!==newW||canvas.height!==newH){canvas.width=newW;canvas.height=newH;canvas.style.width=W+'px';canvas.style.height=H+'px';}
   var ctx=canvas.getContext('2d');
-  ctx.scale(dpr,dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0); // always set (not accumulate) the dpr scale
   ctx.clearRect(0,0,W,H);
   var hasOv=overlays&&overlays.length>0;
   var PL=64,PR=hasOv?62:12,PT=22,PB=28,cW=W-PL-PR,cH=H-PT-PB;
@@ -2243,36 +2244,36 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
   canvas._pd={dates:dates,values:values,n:n,xOf:xOf,yOf:yOf,PL:PL,PR:PR,PT:PT,PB:PB,cW:cW,cH:cH,W:W,H:H,lc:lc,selRange:selRange,tooltipId:tooltipId,overlays:overlays||[]};
   if(!canvas._phBound){
     canvas._phBound=true;
-    var _rafPending=false;
+    var _rafPending=false,_rafIdx=-1,_rafEx=0,_rafEy=0;
     canvas.addEventListener('mousemove',function(e){
       var pd=canvas._pd;if(!pd)return;
       var rect=canvas.getBoundingClientRect();
       var mx=e.clientX-rect.left;
       if(mx<pd.PL||mx>pd.W-pd.PR){_portChartHideTooltip(canvas,pd);return;}
-      var idx=Math.max(0,Math.min(pd.n-1,Math.round((mx-pd.PL)/pd.cW*(pd.n-1))));
-      // Update tooltip immediately (cheap)
+      _rafIdx=Math.max(0,Math.min(pd.n-1,Math.round((mx-pd.PL)/pd.cW*(pd.n-1))));
+      _rafEx=e.clientX;_rafEy=e.clientY;
+      // Update tooltip immediately (cheap DOM op)
       var tip=document.getElementById(pd.tooltipId);
       if(tip){
-        tip.textContent=_portDateLabel(pd.dates[idx])+' · '+fmtC(pd.values[idx]);
+        tip.textContent=_portDateLabel(pd.dates[_rafIdx])+' · '+fmtC(pd.values[_rafIdx]);
         tip.style.display='block';
         var pr=canvas.parentElement.getBoundingClientRect();
-        tip.style.left=Math.min(e.clientX-pr.left+14,pr.width-160)+'px';
-        tip.style.top=Math.max(e.clientY-pr.top-32,4)+'px';
+        tip.style.left=Math.min(_rafEx-pr.left+14,pr.width-160)+'px';
+        tip.style.top=Math.max(_rafEy-pr.top-32,4)+'px';
       }
-      // Throttle canvas redraw to one per animation frame
+      // Throttle canvas redraw to one per animation frame using latest idx
       if(!_rafPending){
         _rafPending=true;
         requestAnimationFrame(function(){
           _rafPending=false;
-          var pd2=canvas._pd;if(!pd2)return;
+          var pd2=canvas._pd;if(!pd2||_rafIdx<0)return;
+          var i=_rafIdx;
           _drawPortChart(canvas,pd2.tooltipId,{dates:pd2.dates,values:pd2.values},pd2.selRange,pd2.overlays);
-          var hx=pd2.xOf(idx),hy=pd2.yOf(pd2.values[idx]);
-          var dpr=window.devicePixelRatio||1;
-          var ctx2=canvas.getContext('2d');
-          ctx2.setTransform(dpr,0,0,dpr,0,0);
+          var hx=pd2.xOf(i),hy=pd2.yOf(pd2.values[i]);
+          var ctx2=canvas.getContext('2d'); // transform already set by _drawPortChart
           ctx2.beginPath();ctx2.moveTo(hx,pd2.PT);ctx2.lineTo(hx,pd2.PT+pd2.cH);
           ctx2.strokeStyle='rgba(0,0,0,0.18)';ctx2.lineWidth=1;ctx2.stroke();
-          ctx2.beginPath();ctx2.arc(hx,hy,4,0,Math.PI*2);ctx2.fillStyle=pd2.values[idx]>=0?'#34c759':'#ff3b30';ctx2.fill();
+          ctx2.beginPath();ctx2.arc(hx,hy,4,0,Math.PI*2);ctx2.fillStyle=pd2.values[i]>=0?'#34c759':'#ff3b30';ctx2.fill();
         });
       }
     });
