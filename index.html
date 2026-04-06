@@ -105,7 +105,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .hero-title{font-size:14px;font-weight:700;letter-spacing:-0.2px;color:var(--text)}
 .nav-stats-bar{padding:4px 48px 5px;border-top:1px solid rgba(0,0,0,.06);}
 .nav-stats-bar:empty{display:none;}
-.stats-sticky{display:contents;}
 .stats-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin-bottom:6px}
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
 .stat-card{background:var(--card);border-radius:var(--radius-sm);padding:3px 8px;box-shadow:var(--shadow-sm);border:1px solid var(--border-light)}
@@ -114,14 +113,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .stat-val-row{display:flex;align-items:baseline;justify-content:space-between;gap:4px}
 .stat-sub{font-size:9.5px;color:var(--text2);white-space:nowrap}
 .stat-last-col{display:flex;flex-direction:column;gap:2px}
-.holdings-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:visible;border:1px solid var(--border-light)}
-.holdings-header{padding:5px 10px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--surface2);position:sticky;top:var(--nav-h,90px);z-index:50;background:var(--card);border-radius:var(--radius) var(--radius) 0 0;}
+.holdings-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto;overflow-y:visible;border:1px solid var(--border-light)}
+.holdings-header{padding:5px 10px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--surface2)}
 .holdings-title{font-size:11px;font-weight:700}
 .btn-add{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-pill);font-size:12px;font-weight:500;cursor:pointer;transition:filter .15s;font-family:inherit;letter-spacing:-.01em}
 .btn-add:hover{filter:brightness(.93)}
 .btn-sm{padding:4px 10px;font-size:11.5px}
-.holdings-rows{overflow-x:auto;overflow-y:visible;}
-.tbl-head{display:grid;grid-template-columns:var(--cols);gap:0;padding:0 10px;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:calc(var(--nav-h,90px) + 29px);z-index:49;}
+.holdings-rows{overflow-x:visible;}
+.tbl-head{display:grid;grid-template-columns:var(--cols);gap:0;padding:0 10px;background:var(--bg);border-bottom:1px solid var(--border)}
 .tbl-head.rollup{grid-template-columns:var(--rollup-cols)}
 .tbl-col{padding:3px 4px;font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;cursor:pointer;white-space:nowrap;user-select:none;display:flex;align-items:center;gap:3px}
 .tbl-col:hover{color:var(--text)}
@@ -3803,10 +3802,6 @@ firebase.auth().onAuthStateChanged(function(user){
   }
 });
 // ---- INIT ----
-function _updateNavH(){
-  var nav=document.querySelector('.nav');
-  if(nav)document.documentElement.style.setProperty('--nav-h',nav.offsetHeight+'px');
-}
 function initApp(){
   _chartCachePurgeOldKeys();
   _lastSync=new Date();
@@ -3815,8 +3810,6 @@ function initApp(){
   fetchCadRate();fetchAllPrices();
   updateSyncDisplay();
   setInterval(function(){doRefresh();},300000);
-  requestAnimationFrame(_updateNavH);
-  new ResizeObserver(_updateNavH).observe(document.querySelector('.nav'));
 }
 </script>
 </body>
