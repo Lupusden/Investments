@@ -1699,22 +1699,31 @@ var _portOverlayCache={};
 var _portRenderChartsGlobal=null,_portChartDataGlobal=null;
 function _syncChartToday(){if(_portRenderChartsGlobal&&_portChartDataGlobal)_portRenderChartsGlobal(_portChartDataGlobal);}
 
-// _chartFx converts a holding's native trading currency → _portfolioCurrency.
+// _chartFx converts a holding's native trading currency → _portfolioCurrency (current rate).
+// Mirrors getFxFactor() so chart today-point matches stat card market value.
 function _chartFx(h){
   var ccy=(h.currency||'USD').toUpperCase();
+  if(ccy===_portfolioCurrency)return 1;
   if(_portfolioCurrency==='USD'){
     return ccy==='CAD'?(_cadUsdRate||1):(h.fxRateToUSD||1);
   }else{ // CAD
-    if(ccy==='CAD')return 1;
     if(ccy==='USD')return _cadUsdRate>0?(1/_cadUsdRate):1;
     return (h.fxRateToUSD||1)*(_cadUsdRate>0?(1/_cadUsdRate):1);
   }
 }
-// Chart cost basis in _portfolioCurrency
+// Chart cost basis in _portfolioCurrency — mirrors calcHolding() lot cost logic exactly.
 function _chartCostBasis(lot,h){
-  var usdCost=(lot.shares*lot.price+(lot.commission||0))*(lot.fxRate||h.fxRateToUSD||1);
-  if(_portfolioCurrency==='CAD')return _cadUsdRate>0?usdCost/_cadUsdRate:usdCost;
-  return usdCost;
+  var hCcy=(h.currency||'USD').toUpperCase();
+  var native=lot.shares*lot.price+(lot.commission||0);
+  if(hCcy===_portfolioCurrency)return native;
+  if(_portfolioCurrency==='USD'){
+    // native is in CAD (or other) → convert to USD using lot's purchase FX rate (CADUSD)
+    return native*(lot.fxRate||h.fxRateToUSD||1);
+  }else{ // portfolioCurrency=CAD, hCcy=USD
+    // native is in USD → convert to CAD using purchase-time CADUSD rate
+    var pFx=lot.purchaseFx||lot.fxRate||_cadUsdRate;
+    return pFx>0?native/pFx:native*(_cadUsdRate>0?(1/_cadUsdRate):1);
+  }
 }
 
 // How many days back each range covers (null = unlimited)
@@ -1752,7 +1761,7 @@ function _buildChartDataFromSeries(series,cutoffDate){
   if(validDates.length<2)return null;
   return{dates:validDates,portValues:portValues,profValues:profValues};
 }
-var _CHART_CACHE_KEY='folio_chart_v3';
+var _CHART_CACHE_KEY='folio_chart_v4';
 function _chartCacheGet(rangeKey){
   try{var s=localStorage.getItem(_CHART_CACHE_KEY);if(!s)return null;
     var obj=JSON.parse(s);var entry=obj[rangeKey];if(!entry)return null;
