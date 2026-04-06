@@ -968,7 +968,10 @@ function mkWideDivider(){var d=document.createElement('div');d.style.cssText='wi
 
 function mkTab(id,label,hasClose,isCat,isDrag,dataId){
   var t=document.createElement('div');
-  t.className='tab'+(activeTab===id?' active':'');
+  var isActive=activeTab===id;
+  // Keep category tab highlighted when viewing one of its accounts
+  if(!isActive&&isCat&&dataId){var _a=getAccount(activeTab);if(_a&&String(_a.categoryId)===String(dataId))isActive=true;}
+  t.className='tab'+(isActive?' active':'');
   t.dataset.tabId=String(id);
   var ls=document.createElement('span');ls.className='tab-label';ls.textContent=label;t.appendChild(ls);
   if(id!=='summary'){
