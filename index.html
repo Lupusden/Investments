@@ -1183,7 +1183,7 @@ function renderOverview(el){
 
   // cols: Account | Invested | Mkt Value | Cash | Total Value | Day% | Day P/L | Stock P/L | FX P/L | Dividends | Total P/L | Total P/L%
   var cols='minmax(160px,2fr) 90px 90px 80px 90px 58px 80px 90px 72px 72px 90px 72px';
-  var hdrs=['Account','Invested','Mkt Value','Cash','Total Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L%'];
+  var hdrs=['Account','Book Value','Mkt Value','Cash','Total Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L%'];
   var thStyle='font-size:9.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;padding:4px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border);';
   // Add a subtle right border to separate the value group (Mkt Value / Cash / Total Value)
   var thStyleTot='font-size:9.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;padding:4px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border);border-right:1px solid var(--border-light);';
@@ -1328,10 +1328,10 @@ function statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv){
   var cashVal=accs?(Array.isArray(accs)?accs:[accs]).reduce(function(s,a){return s+getCashPortValue(a);},0):0;
   var invMV=tv-cashVal;
   return '<div class="stats-grid">'+
-    sCard('Investments + Cash',fmtC(tv),'','var(--text)')+
-    sCard('Investment Value',fmtC(invMV),'','var(--text)')+
+    sCard('Total Mkt Value',fmtC(tv),'','var(--text)')+
+    sCard('Stock Mkt Value',fmtC(invMV),'','var(--text)')+
     (accs?cashStatCard(accs):'')+
-    sCard('Total Invested',fmtC(tc-cashVal),'','var(--text)')+
+    sCard('Book Value',fmtC(tc-cashVal),'','var(--text)')+
     sCard("Day's Change",fmtC(td),fmtPct(tdp),td>=0?'var(--green-text)':'var(--red-text)')+
     sCard('Stock Gain / Loss',fmtC(tsg||0),fmtPct(tsgp),(tsg||0)>=0?'var(--green-text)':'var(--red-text)')+
     sCard('FX Gain / Loss',fmtC(tfx||0),fmtPct(tfxp),(tfx||0)>=0?'var(--green-text)':'var(--red-text)')+
@@ -1355,7 +1355,7 @@ function sCard(label,val,sub,color){return '<div class="stat-card"><div class="s
 
 // ---- HOLDINGS TABLE ----
 function holdingsHTML(holdings,isRollup,acc,accsForCash){
-  var hdrs=isRollup?['Ticker','Web','Name','Account','Exchange','Amount','Cost Price','Invested','Mkt Price','Market Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %','']:['Ticker','Web','Name','Exchange','Amount','Cost Price','Invested','Mkt Price','Market Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %',''];
+  var hdrs=isRollup?['Ticker','Web','Name','Account','Exchange','Amount','Cost Price','Book Value','Mkt Price','Market Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %','']:['Ticker','Web','Name','Exchange','Amount','Cost Price','Book Value','Mkt Price','Market Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %',''];
   var sorted=holdings.slice();
   if(sortCol>=0&&sortCol<hdrs.length){sorted.sort(function(a,b){var va=gSV(a,sortCol,isRollup),vb=gSV(b,sortCol,isRollup);return(va<vb?-1:va>vb?1:0)*sortDir;});}
   var rc=isRollup?' rollup':'';
@@ -1501,7 +1501,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
   var portDPct=invDBase>0?(invDPnL/invDBase*100):0;
   var portNPnLPct=totTC>0?(invNPnL/totTC*100):0;
   var portRow=hasCash?'<div class="total-row'+rc+'" style="background:var(--bg);border-top:2px solid var(--border)">'+
-    '<div class="cell" style="text-align:left">Investments + Cash</div>'+b+
+    '<div class="cell" style="text-align:left">Total Mkt Value</div>'+b+
     b+(isRollup?b:'')+b+b+b+
     '<div class="cell">'+fmtC(totTC)+'</div>'+b+
     '<div class="cell">'+fmtC(totMV)+'</div>'+
