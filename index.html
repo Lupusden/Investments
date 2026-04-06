@@ -114,13 +114,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .stat-val-row{display:flex;align-items:baseline;justify-content:space-between;gap:4px}
 .stat-sub{font-size:9.5px;color:var(--text2);white-space:nowrap}
 .stat-last-col{display:flex;flex-direction:column;gap:2px}
-.holdings-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto;overflow-y:visible;border:1px solid var(--border-light)}
-.holdings-header{padding:5px 10px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--surface2)}
+.holdings-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:visible;border:1px solid var(--border-light)}
+.holdings-header{padding:5px 10px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--surface2);position:sticky;top:var(--nav-h,90px);z-index:50;background:var(--card);border-radius:var(--radius) var(--radius) 0 0;}
 .holdings-title{font-size:11px;font-weight:700}
 .btn-add{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-pill);font-size:12px;font-weight:500;cursor:pointer;transition:filter .15s;font-family:inherit;letter-spacing:-.01em}
 .btn-add:hover{filter:brightness(.93)}
 .btn-sm{padding:4px 10px;font-size:11.5px}
-.tbl-head{display:grid;grid-template-columns:var(--cols);gap:0;padding:0 10px;background:var(--bg);border-bottom:1px solid var(--border)}
+.holdings-rows{overflow-x:auto;overflow-y:visible;}
+.tbl-head{display:grid;grid-template-columns:var(--cols);gap:0;padding:0 10px;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:calc(var(--nav-h,90px) + 29px);z-index:49;}
 .tbl-head.rollup{grid-template-columns:var(--rollup-cols)}
 .tbl-col{padding:3px 4px;font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;cursor:pointer;white-space:nowrap;user-select:none;display:flex;align-items:center;gap:3px}
 .tbl-col:hover{color:var(--text)}
@@ -1514,7 +1515,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash){
     '</div>':'';
 
   var aid=acc?acc.id:0;
-  return '<div class="holdings-card"><div class="holdings-header"><div class="holdings-title">Holdings</div>'+(!isRollup&&acc?'<button class="btn-add btn-sm" onclick="openAddPosition(\''+aid+'\')">+ Add Position</button>':'')+'</div><div class="tbl-head'+rc+'">'+hh+'</div>'+(rr||'<div class="empty-state">No holdings yet.</div>')+(rr?invRow:'')+cashRR+portRow+'</div>';
+  return '<div class="holdings-card"><div class="holdings-header"><div class="holdings-title">Holdings</div>'+(!isRollup&&acc?'<button class="btn-add btn-sm" onclick="openAddPosition(\''+aid+'\')">+ Add Position</button>':'')+'</div><div class="tbl-head'+rc+'">'+hh+'</div><div class="holdings-rows">'+(rr||'<div class="empty-state">No holdings yet.</div>')+(rr?invRow:'')+cashRR+portRow+'</div></div>';
 }
 
 function gSV(h,col,isRollup){
@@ -3802,6 +3803,10 @@ firebase.auth().onAuthStateChanged(function(user){
   }
 });
 // ---- INIT ----
+function _updateNavH(){
+  var nav=document.querySelector('.nav');
+  if(nav)document.documentElement.style.setProperty('--nav-h',nav.offsetHeight+'px');
+}
 function initApp(){
   _chartCachePurgeOldKeys();
   _lastSync=new Date();
@@ -3810,6 +3815,8 @@ function initApp(){
   fetchCadRate();fetchAllPrices();
   updateSyncDisplay();
   setInterval(function(){doRefresh();},300000);
+  requestAnimationFrame(_updateNavH);
+  new ResizeObserver(_updateNavH).observe(document.querySelector('.nav'));
 }
 </script>
 </body>
