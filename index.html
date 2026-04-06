@@ -1282,8 +1282,10 @@ function renderOverview(el){
     thead+rows+totalRow+
     '</div>';
 
-  el.innerHTML=heroHTML('','Overview')+statsHTML(gtv,gtc,gtp,gtpp,gtd,gtfx,gtsg,allAccs,gtdiv)+table;
-  anim(el);
+  var allH=allAccs.reduce(function(arr,a){return arr.concat(a.holdings.map(function(h){return Object.assign({},h,{accountName:a.name,accountId:a.id});}));},[]);
+  var mergedH=mergeHoldingsBySymbol(allH);
+  el.innerHTML=heroHTML('','Overview')+statsHTML(gtv,gtc,gtp,gtpp,gtd,gtfx,gtsg,allAccs,gtdiv)+table+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
+  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(allAccs));initPortfolioChart(allH,_portRange);anim(el);
 }
 
 function renderCategory(el,catId){
