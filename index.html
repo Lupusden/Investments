@@ -2249,20 +2249,18 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
     canvas.addEventListener('mousemove',function(e){
       var pd=canvas._pd;if(!pd)return;
       var rect=canvas.getBoundingClientRect();
-      // mx in CSS pixels (pd.W is already CSS pixels, no dpr scaling needed)
       var mx=e.clientX-rect.left;
       if(mx<pd.PL||mx>pd.W-pd.PR){_portChartHideTooltip(canvas,pd);return;}
       var idx=Math.max(0,Math.min(pd.n-1,Math.round((mx-pd.PL)/pd.cW*(pd.n-1))));
       var ctx2=canvas.getContext('2d');
-      // Restore snapshot instead of full redraw
-      if(pd.snap){ctx2.putImageData(pd.snap,0,0);}
-      var hx=pd.xOf(idx),hy=pd.yOf(pd.values[idx]);
       var dpr=pd.dpr||1;
-      ctx2.save();ctx2.scale(dpr,dpr);
+      // Restore snapshot (physical pixels) then reset transform to dpr scale for drawing
+      if(pd.snap){ctx2.putImageData(pd.snap,0,0);}
+      ctx2.setTransform(dpr,0,0,dpr,0,0);
+      var hx=pd.xOf(idx),hy=pd.yOf(pd.values[idx]);
       ctx2.beginPath();ctx2.moveTo(hx,pd.PT);ctx2.lineTo(hx,pd.PT+pd.cH);
       ctx2.strokeStyle='rgba(0,0,0,0.18)';ctx2.lineWidth=1;ctx2.stroke();
       ctx2.beginPath();ctx2.arc(hx,hy,4,0,Math.PI*2);ctx2.fillStyle=pd.values[idx]>=0?'#34c759':'#ff3b30';ctx2.fill();
-      ctx2.restore();
       var tip=document.getElementById(pd.tooltipId);
       if(tip){
         tip.textContent=_portDateLabel(pd.dates[idx])+' · '+fmtC(pd.values[idx]);
@@ -2275,7 +2273,6 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
     canvas.addEventListener('mouseleave',function(){
       var pd=canvas._pd;if(!pd)return;
       var tip=document.getElementById(pd.tooltipId);if(tip)tip.style.display='none';
-      // Restore clean snapshot
       if(pd.snap){canvas.getContext('2d').putImageData(pd.snap,0,0);}
     });
     canvas.addEventListener('click',function(e){
@@ -2290,7 +2287,7 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
 }
 function _portChartHideTooltip(canvas,pd){
   var tip=document.getElementById(pd.tooltipId);if(tip)tip.style.display='none';
-  if(pd&&pd.snap){canvas.getContext('2d').putImageData(pd.snap,0,0);}
+  if(pd&&pd.snap){var ctx2=canvas.getContext('2d');ctx2.putImageData(pd.snap,0,0);ctx2.setTransform(pd.dpr||1,0,0,pd.dpr||1,0,0);}
 }
 
 function showPortBreakdown(canvasId,date){
