@@ -2248,7 +2248,9 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
     canvas.addEventListener('mousemove',function(e){
       var pd=canvas._pd;if(!pd)return;
       var rect=canvas.getBoundingClientRect();
-      var mx=e.clientX-rect.left;
+      // Scale mouse position from rendered (CSS) coords to the coordinate space used when drawing
+      var scale=pd.W/rect.width;
+      var mx=(e.clientX-rect.left)*scale;
       if(mx<pd.PL||mx>pd.W-pd.PR){_portChartHideTooltip(canvas,pd);return;}
       _rafIdx=Math.max(0,Math.min(pd.n-1,Math.round((mx-pd.PL)/pd.cW*(pd.n-1))));
       _rafEx=e.clientX;_rafEy=e.clientY;
@@ -2285,7 +2287,8 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
     canvas.addEventListener('click',function(e){
       var pd=canvas._pd;if(!pd)return;
       var rect=canvas.getBoundingClientRect();
-      var mx=e.clientX-rect.left;
+      var scale=pd.W/rect.width;
+      var mx=(e.clientX-rect.left)*scale;
       if(mx<pd.PL||mx>pd.W-pd.PR)return;
       var idx=Math.max(0,Math.min(pd.n-1,Math.round((mx-pd.PL)/pd.cW*(pd.n-1))));
       showPortBreakdown(canvas.id,pd.dates[idx]);
