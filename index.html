@@ -2240,40 +2240,46 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
     });
   }
 
-  // Save a snapshot of the drawn chart for fast hover overlay (avoids full redraw on every mousemove)
-  var snap=null;
-  try{snap=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height);}catch(e){}
-  canvas._pd={dates:dates,values:values,n:n,xOf:xOf,yOf:yOf,PL:PL,PR:PR,PT:PT,PB:PB,cW:cW,cH:cH,W:W,H:H,lc:lc,selRange:selRange,tooltipId:tooltipId,overlays:overlays||[],snap:snap,dpr:dpr};
+  canvas._pd={dates:dates,values:values,n:n,xOf:xOf,yOf:yOf,PL:PL,PR:PR,PT:PT,PB:PB,cW:cW,cH:cH,W:W,H:H,lc:lc,selRange:selRange,tooltipId:tooltipId,overlays:overlays||[]};
   if(!canvas._phBound){
     canvas._phBound=true;
+    var _rafPending=false;
     canvas.addEventListener('mousemove',function(e){
       var pd=canvas._pd;if(!pd)return;
       var rect=canvas.getBoundingClientRect();
       var mx=e.clientX-rect.left;
       if(mx<pd.PL||mx>pd.W-pd.PR){_portChartHideTooltip(canvas,pd);return;}
       var idx=Math.max(0,Math.min(pd.n-1,Math.round((mx-pd.PL)/pd.cW*(pd.n-1))));
-      var ctx2=canvas.getContext('2d');
-      var dpr=pd.dpr||1;
-      // Restore snapshot (physical pixels) then reset transform to dpr scale for drawing
-      if(pd.snap){ctx2.putImageData(pd.snap,0,0);}
-      ctx2.setTransform(dpr,0,0,dpr,0,0);
-      var hx=pd.xOf(idx),hy=pd.yOf(pd.values[idx]);
-      ctx2.beginPath();ctx2.moveTo(hx,pd.PT);ctx2.lineTo(hx,pd.PT+pd.cH);
-      ctx2.strokeStyle='rgba(0,0,0,0.18)';ctx2.lineWidth=1;ctx2.stroke();
-      ctx2.beginPath();ctx2.arc(hx,hy,4,0,Math.PI*2);ctx2.fillStyle=pd.values[idx]>=0?'#34c759':'#ff3b30';ctx2.fill();
+      // Update tooltip immediately (cheap)
       var tip=document.getElementById(pd.tooltipId);
       if(tip){
         tip.textContent=_portDateLabel(pd.dates[idx])+' · '+fmtC(pd.values[idx]);
         tip.style.display='block';
         var pr=canvas.parentElement.getBoundingClientRect();
-        var ex=e.clientX-pr.left,ey=e.clientY-pr.top;
-        tip.style.left=Math.min(ex+14,pr.width-160)+'px';tip.style.top=Math.max(ey-32,4)+'px';
+        tip.style.left=Math.min(e.clientX-pr.left+14,pr.width-160)+'px';
+        tip.style.top=Math.max(e.clientY-pr.top-32,4)+'px';
+      }
+      // Throttle canvas redraw to one per animation frame
+      if(!_rafPending){
+        _rafPending=true;
+        requestAnimationFrame(function(){
+          _rafPending=false;
+          var pd2=canvas._pd;if(!pd2)return;
+          _drawPortChart(canvas,pd2.tooltipId,{dates:pd2.dates,values:pd2.values},pd2.selRange,pd2.overlays);
+          var hx=pd2.xOf(idx),hy=pd2.yOf(pd2.values[idx]);
+          var dpr=window.devicePixelRatio||1;
+          var ctx2=canvas.getContext('2d');
+          ctx2.setTransform(dpr,0,0,dpr,0,0);
+          ctx2.beginPath();ctx2.moveTo(hx,pd2.PT);ctx2.lineTo(hx,pd2.PT+pd2.cH);
+          ctx2.strokeStyle='rgba(0,0,0,0.18)';ctx2.lineWidth=1;ctx2.stroke();
+          ctx2.beginPath();ctx2.arc(hx,hy,4,0,Math.PI*2);ctx2.fillStyle=pd2.values[idx]>=0?'#34c759':'#ff3b30';ctx2.fill();
+        });
       }
     });
     canvas.addEventListener('mouseleave',function(){
       var pd=canvas._pd;if(!pd)return;
       var tip=document.getElementById(pd.tooltipId);if(tip)tip.style.display='none';
-      if(pd.snap){canvas.getContext('2d').putImageData(pd.snap,0,0);}
+      _drawPortChart(canvas,pd.tooltipId,{dates:pd.dates,values:pd.values},pd.selRange,pd.overlays);
     });
     canvas.addEventListener('click',function(e){
       var pd=canvas._pd;if(!pd)return;
@@ -2287,7 +2293,7 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
 }
 function _portChartHideTooltip(canvas,pd){
   var tip=document.getElementById(pd.tooltipId);if(tip)tip.style.display='none';
-  if(pd&&pd.snap){var ctx2=canvas.getContext('2d');ctx2.putImageData(pd.snap,0,0);ctx2.setTransform(pd.dpr||1,0,0,pd.dpr||1,0,0);}
+  if(pd)_drawPortChart(canvas,pd.tooltipId,{dates:pd.dates,values:pd.values},pd.selRange,pd.overlays);
 }
 
 function showPortBreakdown(canvasId,date){
