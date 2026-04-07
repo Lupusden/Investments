@@ -1401,12 +1401,20 @@ function _mktPillsHTML(){
   _mktDefs.forEach(function(def){
     var r=_mktData[def.sym];if(!r)return;
     var up=r.chg>=0,cls=up?'up':'dn',arrow=up?'&#9650;':'&#9660;';
-    var fmt=function(v){return def.prefix+(def.isFx?v.toFixed(4):v>=10000?v.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}):v.toFixed(def.dec))+def.suffix;};
-    var fmtChg=function(v){var a=Math.abs(v);return(v>=0?'+':'-')+def.prefix+(def.isFx?a.toFixed(4):a<10?a.toFixed(def.dec):a.toFixed(2))+def.suffix;};
+    var valStr,chgStr;
+    if(def.isFx){
+      var inv=(1/r.price)*100;var invChg=-(r.chg/(r.price*(r.price-r.chg)))*100;
+      valStr=inv.toFixed(2)+'/'+r.price.toFixed(4);
+      chgStr=(r.chg>=0?'+':'')+r.chg.toFixed(4);
+    } else {
+      var fmt=function(v){return def.prefix+(v>=10000?v.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}):v.toFixed(def.dec))+def.suffix;};
+      var fmtChg=function(v){var a=Math.abs(v);return(v>=0?'+':'-')+def.prefix+(a<10?a.toFixed(def.dec):a.toFixed(2))+def.suffix;};
+      valStr=fmt(r.price);chgStr=fmtChg(r.chg);
+    }
     html+='<div class="mkt-pill"><div class="mkt-pill-arrow '+cls+'">'+arrow+'</div>'
       +'<div class="mkt-pill-body"><div class="mkt-pill-name">'+esc(def.label)+'</div>'
-      +'<div class="mkt-pill-val">'+fmt(r.price)+'</div>'
-      +'<div class="mkt-pill-chg '+cls+'">'+fmtChg(r.chg)+'</div>'
+      +'<div class="mkt-pill-val">'+valStr+'</div>'
+      +'<div class="mkt-pill-chg '+cls+'">'+chgStr+'</div>'
       +'</div></div>';
   });
   return html||'<span class="mkt-pill-loading">—</span>';
