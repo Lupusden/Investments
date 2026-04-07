@@ -1417,7 +1417,7 @@ function _mktPillsHTML(){
       var aChg=Math.abs(r.chg);
       var chgFmt=def.prefix+(aChg<10?aChg.toFixed(def.dec):aChg.toFixed(2))+def.suffix;
       valStr=fmt(r.price);
-      chgStr=sign+pct.toFixed(1)+'%/'+sign+chgFmt;
+      chgStr=sign+Math.abs(pct).toFixed(1)+'%/'+sign+chgFmt;
     }
     html+='<div class="mkt-pill"><div class="mkt-pill-arrow '+cls+'">'+arrow+'</div>'
       +'<div class="mkt-pill-body"><div class="mkt-pill-name">'+esc(def.label)+'</div>'
