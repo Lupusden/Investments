@@ -117,6 +117,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .holdings-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border-light);overflow-x:auto;}
 .holdings-header{padding:5px 10px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--surface2);background:var(--card);border-radius:var(--radius) var(--radius) 0 0;}
 .holdings-title{font-size:11px;font-weight:700}
+.mkt-bar{display:flex;align-items:stretch;gap:0;padding:0 6px;border-bottom:1px solid var(--surface2);overflow-x:auto;scrollbar-width:none;background:var(--card);}
+.mkt-bar::-webkit-scrollbar{display:none;}
+.mkt-bar-item{display:flex;align-items:center;gap:5px;padding:5px 12px;border-right:1px solid var(--surface2);flex-shrink:0;cursor:default;}
+.mkt-bar-item:last-child{border-right:none;}
+.mkt-bar-arrow{font-size:9px;line-height:1;}
+.mkt-bar-arrow.up{color:#34c759;}.mkt-bar-arrow.dn{color:#ff3b30;}
+.mkt-bar-info{display:flex;flex-direction:column;gap:0px;}
+.mkt-bar-name{font-size:9.5px;font-weight:700;color:var(--text);line-height:1.3;}
+.mkt-bar-val{font-size:9.5px;color:var(--text);line-height:1.3;}
+.mkt-bar-chg.up{font-size:9px;color:#34c759;line-height:1.3;}.mkt-bar-chg.dn{font-size:9px;color:#ff3b30;line-height:1.3;}
+.mkt-bar-loading{font-size:9.5px;color:var(--text2);padding:6px 4px;}
 .btn-add{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-pill);font-size:12px;font-weight:500;cursor:pointer;transition:filter .15s;font-family:inherit;letter-spacing:-.01em}
 .btn-add:hover{filter:brightness(.93)}
 .btn-sm{padding:4px 10px;font-size:11.5px}
@@ -1188,7 +1199,7 @@ function renderSummary(el){
   var mergedH=mergeHoldingsBySymbol(allH);
   el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('','All Stocks'))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
   var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);
-  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);
+  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);fetchMarketIndices();
 }
 
 function renderOverview(el){
@@ -1297,12 +1308,12 @@ function renderOverview(el){
   var mergedH=mergeHoldingsBySymbol(allH);
   var botRow='<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
   var table='<div class="holdings-card" style="margin-bottom:16px">'+
-    '<div class="sticky-table-head">'+heroHTML('','Overview')+'<div class="holdings-header"><span class="holdings-title">Portfolio Overview</span></div>'+
+    '<div class="sticky-table-head">'+heroHTML('','Overview')+'<div class="holdings-header"><span class="holdings-title">Portfolio Overview</span></div>'+marketBarHTML()+
     thead+'</div><div class="holdings-scroll">'+rows+totalRow+'</div>'+
     '</div>';
 
   el.innerHTML=statsHTML(gtv,gtc,gtp,gtpp,gtd,gtfx,gtsg,allAccs,gtdiv)+table+botRow;
-  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(allAccs));initPortfolioChart(allH,_portRange);anim(el);
+  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(allAccs));initPortfolioChart(allH,_portRange);anim(el);fetchMarketIndices();
 }
 
 function renderCategory(el,catId){
@@ -1314,7 +1325,7 @@ function renderCategory(el,catId){
   var mergedH=mergeHoldingsBySymbol(allH);
   el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('',esc(cat.name)))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
   var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);
-  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);
+  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);fetchMarketIndices();
 }
 
 function renderAccount(el,acc){
@@ -1322,7 +1333,7 @@ function renderAccount(el,acc){
   var cat=getCategory(acc.categoryId);
   el.innerHTML=statsHTML(s.totalValue,s.totalCost,s.totalPnL,tpp,s.totalDailyPnL,s.totalFxGain,tsg,[acc],s.totalDividends)+holdingsHTML(acc.holdings,false,acc,null,heroHTML(cat?cat.name:'',esc(acc.name)))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(acc.holdings)+'</div></div>';
   var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,false);
-  bindHoldingClicks(el,false,acc);initDonut(acc.holdings,getCashItems([acc]));initPortfolioChart(acc.holdings,_portRange);anim(el);
+  bindHoldingClicks(el,false,acc);initDonut(acc.holdings,getCashItems([acc]));initPortfolioChart(acc.holdings,_portRange);anim(el);fetchMarketIndices();
 }
 
 function heroHTML(catName,title){
@@ -1371,6 +1382,59 @@ function cashStatCard(accs){
     +'</div></div>';
 }
 function sCard(label,val,sub,color){return '<div class="stat-card"><div class="stat-label">'+esc(label)+'</div><div class="stat-val-row"><div class="stat-value" style="color:'+color+'">'+val+'</div>'+(sub?'<div class="stat-sub" style="color:'+color+'">'+sub+'</div>':'')+'</div></div>';}
+
+// ---- MARKET INDICES BAR ----
+var _mktDefs=[
+  {sym:'^GSPTSE',label:'S&P/TSX',prefix:'',suffix:'',dec:2},
+  {sym:'^DJI',label:'DOW',prefix:'',suffix:'',dec:2},
+  {sym:'^GSPC',label:'S&P 500',prefix:'',suffix:'',dec:2},
+  {sym:'^IXIC',label:'NASDAQ',prefix:'',suffix:'',dec:2},
+  {sym:'USDCAD=X',label:'DOLLAR',prefix:'',suffix:'',dec:4,isFx:true},
+  {sym:'GC=F',label:'GOLD (oz.)',prefix:'US$',suffix:'',dec:2},
+  {sym:'CL=F',label:'OIL (WTI)',prefix:'US$',suffix:'',dec:2},
+  {sym:'^TMBMKCA-10Y',label:'GCAN (10-YR)',prefix:'',suffix:'%',dec:2},
+];
+function marketBarHTML(){
+  return '<div class="mkt-bar" id="mktBar"><span class="mkt-bar-loading">Loading market data\u2026</span></div>';
+}
+function fetchMarketIndices(){
+  var bar=document.getElementById('mktBar');if(!bar)return;
+  var pending=_mktDefs.length,results={};
+  _mktDefs.forEach(function(def){
+    var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(def.sym)+'?interval=1d&range=1d';
+    yahooFetch(url).then(function(data){
+      var meta=data&&data.chart&&data.chart.result&&data.chart.result[0]&&data.chart.result[0].meta;
+      if(meta){
+        var price=meta.regularMarketPrice||0;
+        var prev=meta.chartPreviousClose||meta.previousClose||price;
+        var chg=price-prev;
+        results[def.sym]={price:price,chg:chg,def:def};
+      }
+    }).catch(function(){}).finally(function(){
+      if(--pending===0)_renderMktBar(bar,results);
+    });
+  });
+}
+function _renderMktBar(bar,results){
+  var html='';
+  _mktDefs.forEach(function(def){
+    var r=results[def.sym];
+    if(!r){html+='<div class="mkt-bar-item"><div class="mkt-bar-info"><div class="mkt-bar-name">'+esc(def.label)+'</div><div class="mkt-bar-val" style="color:var(--text2)">—</div></div></div>';return;}
+    var up=r.chg>=0;
+    var arrow=up?'&#9650;':'&#9660;';
+    var cls=up?'up':'dn';
+    var fmt=function(v){return def.prefix+(def.isFx?v.toFixed(4):v>=10000?v.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}):v.toFixed(def.dec))+def.suffix;};
+    var fmtChg=function(v){return (v>=0?'+':'')+def.prefix+(def.isFx?v.toFixed(4):Math.abs(v)<10?v.toFixed(def.dec):v.toFixed(2))+def.suffix;};
+    html+='<div class="mkt-bar-item">'
+      +'<div class="mkt-bar-arrow '+cls+'">'+arrow+'</div>'
+      +'<div class="mkt-bar-info">'
+      +'<div class="mkt-bar-name">'+esc(def.label)+'</div>'
+      +'<div class="mkt-bar-val">'+fmt(r.price)+'</div>'
+      +'<div class="mkt-bar-chg '+cls+'">'+fmtChg(r.chg)+'</div>'
+      +'</div></div>';
+  });
+  bar.innerHTML=html||'<span class="mkt-bar-loading">Market data unavailable</span>';
+}
 
 // ---- HOLDINGS TABLE ----
 function holdingsHTML(holdings,isRollup,acc,accsForCash,heroHtml){
@@ -1528,7 +1592,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash,heroHtml){
     '</div>':'';
 
   var aid=acc?acc.id:0;
-  return '<div class="holdings-card"><div class="sticky-table-head">'+(heroHtml||'')+'<div class="holdings-header"><div class="holdings-title">Holdings</div>'+(!isRollup&&acc?'<button class="btn-add btn-sm" onclick="openAddPosition(\''+aid+'\')">+ Add Position</button>':'')+'</div><div class="tbl-head'+rc+'">'+hh+'</div></div><div class="holdings-scroll"><div class="holdings-rows">'+(rr||'<div class="empty-state">No holdings yet.</div>')+(rr?invRow:'')+cashRR+portRow+'</div></div></div>';
+  return '<div class="holdings-card"><div class="sticky-table-head">'+(heroHtml||'')+'<div class="holdings-header"><div class="holdings-title">Holdings</div>'+(!isRollup&&acc?'<button class="btn-add btn-sm" onclick="openAddPosition(\''+aid+'\')">+ Add Position</button>':'')+'</div>'+marketBarHTML()+'<div class="tbl-head'+rc+'">'+hh+'</div></div><div class="holdings-scroll"><div class="holdings-rows">'+(rr||'<div class="empty-state">No holdings yet.</div>')+(rr?invRow:'')+cashRR+portRow+'</div></div></div>';
 }
 
 function gSV(h,col,isRollup){
