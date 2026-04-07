@@ -1641,9 +1641,9 @@ function chartHTML(){
 
 function _initSingleDonut(canvasId,tooltipId,items,total,showValue){
   var canvas=document.getElementById(canvasId);if(!canvas)return;
-  var W=canvas.parentElement.clientWidth||280;var H=220;canvas.width=W;canvas.height=H;
+  var W=canvas.parentElement.clientWidth||280;var H=240;canvas.width=W;canvas.height=H;
   var ctx=canvas.getContext('2d');
-  var r=Math.round(H*0.38),ri=Math.round(r*0.62),cx=W/2,cy=H/2;
+  var r=Math.round(H*0.34),ri=Math.round(r*0.62),cx=W/2,cy=Math.round(H*0.44);
   if(total===0){ctx.clearRect(0,0,W,H);ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle='var(--surface2)';ctx.fill();ctx.beginPath();ctx.arc(cx,cy,ri,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();return;}
   var segs=[];var start=-Math.PI/2;
   var top10Set={};items.slice(0,10).forEach(function(it,i){top10Set[it.label]=i;});
