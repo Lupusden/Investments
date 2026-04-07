@@ -1451,9 +1451,9 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash,heroHtml){
     if(isRollup)r+='<div class="cell" style="text-align:left">'+esc(h.accountName||'')+'</div>';
     r+='<div class="cell" style="text-align:left;font-size:11px;color:var(--text2)">'+esc(h.exchange||'')+'</div>';
     r+='<div class="cell">'+fmtShares(c.totalShares)+'</div>';
-    r+='<div class="cell" style="color:var(--text2)">'+fmtC(c.avgPrice,2)+'</div>';
+    r+='<div class="cell" style="color:#b0b0b8">'+fmtC(c.avgPrice,2)+'</div>';
     r+='<div class="cell">'+fmtC(c.totalCost)+'</div>';
-    r+='<div class="cell" style="color:var(--text2)">'+fmtC(h.currentPrice*getFxFactor(h),2)+'</div>';
+    r+='<div class="cell" style="color:#b0b0b8">'+fmtC(h.currentPrice*getFxFactor(h),2)+'</div>';
     r+='<div class="cell">'+fmtC(c.marketValue)+'</div>';
     r+='<div class="cell '+cc(c.dailyPnLPct)+'">'+fmtPct(c.dailyPnLPct)+'</div>';
     r+='<div class="cell '+cc(c.dailyPnL)+'">'+fmtC(c.dailyPnL)+'</div>';
