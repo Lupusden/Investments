@@ -1629,23 +1629,26 @@ function bindHoldingClicks(container,isRollup){
 function sortBy(col,isRollup){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}render();}
 
 // ---- DONUT CHART ----
-function chartHTML(){return'<div class="chart-card"><div class="chart-title">Allocation</div><div class="donut-wrap" style="margin-bottom:0"><canvas id="donutCanvas" width="320" height="270"></canvas><div class="donut-tooltip" id="donutTooltip"></div></div></div>';}
+function chartHTML(){
+  return '<div class="chart-card"><div class="chart-title">Allocation</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">'
+    +'<div><div style="font-size:9.5px;font-weight:500;color:var(--text2);text-align:center;margin-bottom:3px">Value ($\'000)</div>'
+    +'<div class="donut-wrap" style="margin-bottom:0"><canvas id="donutCanvasVal"></canvas><div class="donut-tooltip" id="donutTooltipVal"></div></div></div>'
+    +'<div><div style="font-size:9.5px;font-weight:500;color:var(--text2);text-align:center;margin-bottom:3px">Allocation (%)</div>'
+    +'<div class="donut-wrap" style="margin-bottom:0"><canvas id="donutCanvas"></canvas><div class="donut-tooltip" id="donutTooltip"></div></div></div>'
+    +'</div></div>';
+}
 
-function initDonut(holdings,cashItems){
-  var canvas=document.getElementById('donutCanvas');if(!canvas)return;
-  var W=canvas.parentElement.clientWidth||360;var H=220;canvas.width=W;canvas.height=H;
+function _initSingleDonut(canvasId,tooltipId,items,total,showValue){
+  var canvas=document.getElementById(canvasId);if(!canvas)return;
+  var W=canvas.parentElement.clientWidth||280;var H=200;canvas.width=W;canvas.height=H;
   var ctx=canvas.getContext('2d');
-  var allItems=holdings.map(function(h){var c=calcHolding(h);return{label:h.symbol,value:c.marketValue,name:h.name};}).filter(function(i){return i.value>0;});
-  if(cashItems)cashItems.forEach(function(ci){if(ci.value>0)allItems.push(ci);});
-  allItems.sort(function(a,b){return b.value-a.value;});
-  var items=allItems; // all holdings as slices
-  var top10Set={}; allItems.slice(0,10).forEach(function(it,i){top10Set[it.label]=i;}); // top 10 get callouts
-  var total=items.reduce(function(s,i){return s+i.value;},0);
-  var r=Math.round(H*0.38),ri=Math.round(r*0.62);
-  if(total===0){ctx.clearRect(0,0,W,H);ctx.beginPath();ctx.arc(W/2,H/2,r,0,Math.PI*2);ctx.fillStyle='var(--surface2)';ctx.fill();ctx.beginPath();ctx.arc(W/2,H/2,ri,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();return;}
-  var cx=W/2,cy=H/2;
+  var r=Math.round(H*0.38),ri=Math.round(r*0.62),cx=W/2,cy=H/2;
+  if(total===0){ctx.clearRect(0,0,W,H);ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle='var(--surface2)';ctx.fill();ctx.beginPath();ctx.arc(cx,cy,ri,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();return;}
   var segs=[];var start=-Math.PI/2;
+  var top10Set={};items.slice(0,10).forEach(function(it,i){top10Set[it.label]=i;});
   items.forEach(function(item,i){var sw=(item.value/total)*Math.PI*2;segs.push({start:start,end:start+sw,color:CHART_COLORS[i%CHART_COLORS.length],label:item.label,value:item.value,name:item.name,hasCallout:item.label in top10Set});start+=sw;});
+  function fmtVal(v){var k=v/1000;return k>=1000?(k/1000).toFixed(1)+'M':k>=100?Math.round(k)+'K':k.toFixed(1)+'K';}
   function computeLabelPos(){
     var calloutSegs=segs.filter(function(s){return s.hasCallout;});
     var pts=calloutSegs.map(function(seg){
@@ -1664,19 +1667,15 @@ function initDonut(holdings,cashItems){
     ctx.clearRect(0,0,W,H);
     segs.forEach(function(seg,i){ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,hov===i?r+5:r,seg.start,seg.end);ctx.closePath();ctx.fillStyle=seg.color;ctx.fill();});
     ctx.beginPath();ctx.arc(cx,cy,ri,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
-    if(hov==null){ctx.fillStyle='#8e8e93';ctx.font='bold 11px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(items.length+' Holdings',cx,cy);}
-    // Draw % inside slices that are large enough (sweep >= 0.18 rad ~ 10%)
+    if(hov==null){ctx.fillStyle='#8e8e93';ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(items.length+' Holdings',cx,cy);}
     segs.forEach(function(seg,i){
-      var sw=seg.end-seg.start;
-      if(sw<0.18)return;
-      var mid=(seg.start+seg.end)/2;
-      var tr=(ri+r)/2+(hov===i?2.5:0);
+      var sw=seg.end-seg.start;if(sw<0.18)return;
+      var mid=(seg.start+seg.end)/2,tr=(ri+r)/2+(hov===i?2.5:0);
       var tx=cx+tr*Math.cos(mid),ty=cy+tr*Math.sin(mid);
-      var pct=(seg.value/total*100).toFixed(1);
+      var lbl=showValue?fmtVal(seg.value):(seg.value/total*100).toFixed(1)+'%';
       ctx.font='bold '+Math.max(8,Math.round(r*0.12))+'px -apple-system,sans-serif';
-      ctx.fillStyle='rgba(255,255,255,0.92)';
-      ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(pct+'%',tx,ty);
+      ctx.fillStyle='rgba(255,255,255,0.92)';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(lbl,tx,ty);
     });
     var lps=computeLabelPos();
     lps.forEach(function(lp){
@@ -1684,8 +1683,8 @@ function initDonut(holdings,cashItems){
       var tick=Math.round(r*0.15);var endX=lp.ex+(lp.isR?tick:-tick);
       ctx.beginPath();ctx.moveTo(lp.p1x,lp.p1y);ctx.lineTo(lp.ex,lp.ly);ctx.lineTo(endX,lp.ly);
       ctx.strokeStyle=isHov?seg.color:'rgba(0,0,0,0.22)';ctx.lineWidth=isHov?1.5:1;ctx.stroke();
-      var nameLabel=seg.name.length>18?seg.name.slice(0,17)+'\u2026':seg.name;
-      var fsize=Math.max(9,Math.round(r*0.135));
+      var nameLabel=seg.name.length>14?seg.name.slice(0,13)+'\u2026':seg.name;
+      var fsize=Math.max(8,Math.round(r*0.12));
       ctx.font=(isHov?'bold ':'')+fsize+'px -apple-system,sans-serif';
       ctx.fillStyle=isHov?seg.color:'#444';
       ctx.textAlign=lp.isR?'left':'right';ctx.textBaseline='middle';
@@ -1693,7 +1692,7 @@ function initDonut(holdings,cashItems){
     });
   }
   draw(null);
-  var tooltip=document.getElementById('donutTooltip');
+  var tooltip=document.getElementById(tooltipId);
   var curHov=null;
   function getHov(mx,my){var dx=mx-cx,dy=my-cy,d=Math.sqrt(dx*dx+dy*dy);if(d<ri||d>r+8)return-1;var ang=Math.atan2(dy,dx)+Math.PI/2;if(ang<0)ang+=Math.PI*2;for(var i=0;i<segs.length;i++){var s=segs[i].start+Math.PI/2,e=segs[i].end+Math.PI/2;if(s<0)s+=Math.PI*2;if(e<0)e+=Math.PI*2;if(e>s){if(ang>=s&&ang<=e)return i;}else{if(ang>=s||ang<=e)return i;}}return-1;}
   canvas.addEventListener('mousemove',function(e){
@@ -1704,6 +1703,15 @@ function initDonut(holdings,cashItems){
     if(hov!=null&&tooltip){var seg=segs[hov];var pct=(seg.value/total*100).toFixed(1);tooltip.style.opacity='1';tooltip.textContent=seg.name+': '+fmtC(seg.value)+' ('+pct+'%)';var tx=e.clientX-rect.left+14,ty=e.clientY-rect.top-22;if(tx+160>rect.width)tx=e.clientX-rect.left-170;if(ty<0)ty=e.clientY-rect.top+10;tooltip.style.left=tx+'px';tooltip.style.top=ty+'px';}else if(tooltip)tooltip.style.opacity='0';
   });
   canvas.addEventListener('mouseleave',function(){curHov=null;draw(null);if(tooltip)tooltip.style.opacity='0';});
+}
+
+function initDonut(holdings,cashItems){
+  var allItems=holdings.map(function(h){var c=calcHolding(h);return{label:h.symbol,value:c.marketValue,name:h.name};}).filter(function(i){return i.value>0;});
+  if(cashItems)cashItems.forEach(function(ci){if(ci.value>0)allItems.push(ci);});
+  allItems.sort(function(a,b){return b.value-a.value;});
+  var total=allItems.reduce(function(s,i){return s+i.value;},0);
+  _initSingleDonut('donutCanvasVal','donutTooltipVal',allItems,total,true);
+  _initSingleDonut('donutCanvas','donutTooltip',allItems,total,false);
 }
 
 // ---- PORTFOLIO HISTORY CHART ----
