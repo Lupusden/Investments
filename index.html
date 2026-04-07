@@ -1426,7 +1426,7 @@ function _fillMktPills(){
 function fetchMarketIndices(){
   var pending=_mktDefs.length,results={};
   _mktDefs.forEach(function(def){
-    var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(def.sym)+'?interval=1d&range=1d';
+    var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(def.sym)+'?interval=1m&range=1d&_t='+Date.now();
     yahooFetch(url).then(function(data){
       var meta=data&&data.chart&&data.chart.result&&data.chart.result[0]&&data.chart.result[0].meta;
       if(meta){var price=meta.regularMarketPrice||0,prev=meta.chartPreviousClose||meta.previousClose||price;results[def.sym]={price:price,chg:price-prev};}
