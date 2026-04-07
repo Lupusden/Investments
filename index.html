@@ -164,9 +164,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .cash-lot-head{display:grid;grid-template-columns:100px 110px 60px 1fr 180px;padding:2px 4px;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border-light)}
 .cash-lot-row{display:grid;grid-template-columns:100px 110px 60px 1fr 180px;gap:0;padding:1px 0;align-items:center;min-height:20px}
 .right-col{display:flex;flex-direction:column;gap:16px}
-.chart-card{background:var(--card);border-radius:var(--radius);padding:14px 18px 12px;box-shadow:var(--shadow);border:1px solid var(--border-light)}
+.chart-card{background:var(--card);border-radius:var(--radius);padding:14px 18px 24px;box-shadow:var(--shadow);border:1px solid var(--border-light)}
 .chart-title{font-size:13px;font-weight:700;margin-bottom:10px}
-.donut-wrap{position:relative;display:flex;justify-content:center;align-items:center;margin-bottom:14px;overflow:hidden}
+.donut-wrap{position:relative;display:flex;justify-content:center;align-items:center;margin-bottom:14px;overflow:visible}
 #donutCanvas{max-width:100%;}
 .donut-tooltip{position:absolute;background:rgba(29,29,31,0.92);color:#fff;font-size:12px;padding:6px 10px;border-radius:8px;pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .15s;z-index:10;top:0;left:0}
 .chart-legend{display:flex;flex-direction:column;gap:6px}
@@ -1641,7 +1641,7 @@ function chartHTML(){
 
 function _initSingleDonut(canvasId,tooltipId,items,total,showValue){
   var canvas=document.getElementById(canvasId);if(!canvas)return;
-  var W=canvas.parentElement.clientWidth||280;var H=200;canvas.width=W;canvas.height=H;
+  var W=canvas.parentElement.clientWidth||280;var H=220;canvas.width=W;canvas.height=H;
   var ctx=canvas.getContext('2d');
   var r=Math.round(H*0.38),ri=Math.round(r*0.62),cx=W/2,cy=H/2;
   if(total===0){ctx.clearRect(0,0,W,H);ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle='var(--surface2)';ctx.fill();ctx.beginPath();ctx.arc(cx,cy,ri,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();return;}
