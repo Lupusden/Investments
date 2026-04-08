@@ -2452,60 +2452,84 @@ function showPortBreakdown(canvasId,date){
 }
 
 // ---- TOP MOVERS WIDGET ----
-var _moversMode='day'; // 'day' or 'total'
+var _moversMode='day'; // 'day'|'total'
+var _moversVal='pct';  // 'pct'|'dollar'
 var _moversHoldings=[];
 
-function _moverRow(name,sym,pct,maxAbs){
-  var cls=pct>=0?'pos':'neg';
-  var barW=maxAbs>0?Math.min(Math.abs(pct)/maxAbs*100,100):0;
-  var sign=pct>=0?'+':'';
-  var shortName=name.length>22?name.slice(0,21)+'…':name;
-  return'<div style="display:grid;grid-template-columns:1fr 46px;align-items:center;gap:6px;margin-bottom:8px">'
-    +'<div>'
-    +'<div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+esc(name)+' ('+esc(sym)+')">'+esc(shortName)+'</div>'
-    +'<div style="margin-top:2px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+barW.toFixed(1)+'%;border-radius:3px;background:'+(pct>=0?'var(--green-text)':'var(--red-text)')+'"></div></div>'
+function _moverRow(name,sym,val,maxAbs,isDollar){
+  var color=val>=0?'var(--green-text)':'var(--red-text)';
+  var barW=maxAbs>0?Math.min(Math.abs(val)/maxAbs*100,100):0;
+  var sign=val>=0?'+':'';
+  var valStr=isDollar?sign+fmtC(val):sign+fmt(Math.abs(val),1)+'%';
+  if(!isDollar&&val<0)valStr='-'+fmt(Math.abs(val),1)+'%';
+  var shortName=name.length>20?name.slice(0,19)+'\u2026':name;
+  return'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
+    +'<div style="flex:0 0 38%;font-size:10.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+esc(name)+' ('+esc(sym)+')">'+esc(shortName)+'</div>'
+    +'<div style="flex:1;height:3px;background:var(--surface2);border-radius:2px;overflow:visible">'
+    +'<div style="height:100%;width:'+barW.toFixed(1)+'%;border-radius:2px;background:'+color+'"></div>'
     +'</div>'
-    +'<div style="font-size:11px;font-weight:700;text-align:right;color:'+(pct>=0?'var(--green-text)':'var(--red-text)')+'">'+sign+fmt(pct,1)+'%</div>'
+    +'<div style="flex:0 0 58px;text-align:right;font-size:10.5px;font-weight:700;color:'+color+';white-space:nowrap">'+valStr+'</div>'
     +'</div>';
 }
 
-function _buildMoversInner(holdings,mode){
+function _buildMoversInner(holdings,mode,valMode){
   var rows=[];
   holdings.forEach(function(h){
     var c=calcHolding(h);
     if(c.marketValue<=0)return;
     var pct=mode==='day'?(h.dayChangePct||0):(c.totalCost>0?(c.netPnL/c.totalCost*100):null);
     if(pct===null)return;
-    rows.push({name:h.name||h.symbol,sym:h.symbol,pct:pct});
+    var dollar=mode==='day'?(c.dailyPnL||0):(c.netPnL||0);
+    rows.push({name:h.name||h.symbol,sym:h.symbol,pct:pct,dollar:dollar});
   });
   if(!rows.length)return'<div style="padding:20px;text-align:center;font-size:11px;color:var(--text2)">No data</div>';
-  rows.sort(function(a,b){return b.pct-a.pct;});
-  var N=4;
-  var winners=rows.slice(0,N).filter(function(r){return r.pct>0;});
-  var losers=rows.slice(-N).filter(function(r){return r.pct<0;}).reverse();
+  var isDollar=valMode==='dollar';
+  var getVal=function(r){return isDollar?r.dollar:r.pct;};
+  rows.sort(function(a,b){return getVal(b)-getVal(a);});
+  var N=5;
+  var winners=rows.slice(0,N).filter(function(r){return getVal(r)>0;});
+  var losers=rows.slice(-N).filter(function(r){return getVal(r)<0;}).reverse();
   var all=winners.concat(losers);
   if(!all.length)all=rows.slice(0,Math.min(N,rows.length));
-  var maxAbs=all.reduce(function(m,r){return Math.max(m,Math.abs(r.pct));},0.001);
-  var modeBtn=function(id,label){return'<button onclick="setMoversMode(\''+id+'\')" style="padding:2px 10px;font-size:10px;font-weight:600;border-radius:10px;border:1px solid var(--border);cursor:pointer;font-family:inherit;transition:all .15s;'+(mode===id?'background:var(--blue);color:#fff;border-color:var(--blue)':'background:transparent;color:var(--text2)')+'">'+label+'</button>';};
-  var header='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+  var maxAbs=all.reduce(function(m,r){return Math.max(m,Math.abs(getVal(r)));},0.001);
+  var tBtn=function(id,label,fn){
+    var active=mode===id;
+    return'<button onclick="'+fn+'(\''+id+'\')" style="padding:2px 9px;font-size:10px;font-weight:600;border-radius:10px;border:1px solid '+(active?'var(--blue)':'var(--border)')+';cursor:pointer;font-family:inherit;background:'+(active?'var(--blue)':'transparent')+';color:'+(active?'#fff':'var(--text2)')+'">'+label+'</button>';
+  };
+  var vBtn=function(id,label){
+    var active=valMode===id;
+    return'<button onclick="setMoversVal(\''+id+'\')" style="padding:2px 9px;font-size:10px;font-weight:600;border-radius:10px;border:1px solid '+(active?'var(--blue)':'var(--border)')+';cursor:pointer;font-family:inherit;background:'+(active?'var(--blue)':'transparent')+';color:'+(active?'#fff':'var(--text2)')+'">'+label+'</button>';
+  };
+  var header='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
     +'<div style="font-size:13px;font-weight:700">Top Movers</div>'
-    +'<div style="display:flex;gap:4px">'+modeBtn('day','Today')+modeBtn('total','Total')+'</div>'
-    +'</div>';
-  var winSection=winners.length?'<div style="font-size:9px;font-weight:700;color:var(--green-text);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Winners</div>'+winners.map(function(r){return _moverRow(r.name,r.sym,r.pct,maxAbs);}).join(''):'';
-  var loseSection=losers.length?'<div style="font-size:9px;font-weight:700;color:var(--red-text);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;'+(winners.length?'margin-top:10px':'')+'">Losers</div>'+losers.map(function(r){return _moverRow(r.name,r.sym,r.pct,maxAbs);}).join(''):'';
+    +'<div style="display:flex;gap:4px">'
+    +tBtn('day','Today','setMoversMode')+tBtn('total','Total','setMoversMode')
+    +'<span style="width:1px;background:var(--surface2);margin:0 2px;align-self:stretch"></span>'
+    +vBtn('pct','%')+vBtn('dollar','$')
+    +'</div></div>';
+  var sectionLabel=function(label,color,mt){
+    return'<div style="font-size:8.5px;font-weight:700;color:'+color+';text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px'+(mt?';margin-top:10px':'')+'">'+(label==='w'?'▲ Winners':'▼ Losers')+'</div>';
+  };
+  var winSection=winners.length?sectionLabel('w','var(--green-text)',false)+winners.map(function(r){return _moverRow(r.name,r.sym,getVal(r),maxAbs,isDollar);}).join(''):'';
+  var loseSection=losers.length?sectionLabel('l','var(--red-text)',!!winners.length)+losers.map(function(r){return _moverRow(r.name,r.sym,getVal(r),maxAbs,isDollar);}).join(''):'';
   return header+winSection+loseSection;
 }
 
 function setMoversMode(mode){
   _moversMode=mode;
   var card=document.getElementById('retCard');
-  if(card&&_moversHoldings.length)card.innerHTML=_buildMoversInner(_moversHoldings,mode);
+  if(card&&_moversHoldings.length)card.innerHTML=_buildMoversInner(_moversHoldings,mode,_moversVal);
+}
+function setMoversVal(v){
+  _moversVal=v;
+  var card=document.getElementById('retCard');
+  if(card&&_moversHoldings.length)card.innerHTML=_buildMoversInner(_moversHoldings,_moversMode,v);
 }
 
 function perfHTML(holdings){
   _moversHoldings=holdings;
   if(!holdings.length)return'<div class="ret-card" id="retCard"><div class="ret-title">Top Movers</div><div class="empty-state" style="padding:20px">No data</div></div>';
-  return'<div class="ret-card" id="retCard">'+_buildMoversInner(holdings,_moversMode)+'</div>';
+  return'<div class="ret-card" id="retCard">'+_buildMoversInner(holdings,_moversMode,_moversVal)+'</div>';
 }
 
 // stub so chart code does not break
