@@ -120,7 +120,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .mkt-pills-nav-bar{padding:5px 48px 6px;border-top:1px solid rgba(0,0,0,.06);display:flex;align-items:center;justify-content:flex-end;gap:6px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;min-height:0;}
 .mkt-pills-nav-bar:not(:has(*)){display:none;}
 .mkt-pills-nav-bar::-webkit-scrollbar{display:none;}
-.mkt-pills-row{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow:hidden;}
+.mkt-pills-row{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
+.mkt-pills-row::-webkit-scrollbar{display:none;}
 .mkt-pill{display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--card);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);border:1px solid var(--border-light);flex-shrink:0;cursor:pointer;text-decoration:none;color:inherit;transition:box-shadow .15s,border-color .15s;}
 .mkt-pill:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);border-color:var(--blue);}
 .mkt-pill-arrow{font-size:8px;line-height:1;margin-top:2px;}
@@ -1441,10 +1442,11 @@ function _fillMktPills(){
   var el=document.getElementById('mktPills');
   if(el){
     el.innerHTML=html;
-    // Once hero has real data, hide the nav-bar fallback (was only needed pre-Firebase)
-    if(_mktData){
-      var nb=document.getElementById('mktPillsBar');
-      if(nb)nb.style.display='none';
+    var nb=document.getElementById('mktPillsBar');
+    if(nb){
+      // Hide nav fallback only when hero actually has real pill elements
+      var hasPills=!!el.querySelector('.mkt-pill');
+      nb.style.display=hasPills?'none':'';
     }
   }
 }
