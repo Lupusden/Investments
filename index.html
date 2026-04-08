@@ -99,7 +99,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .breakdown-tbl td:first-child{text-align:left;font-weight:600}
 .breakdown-tbl tr:last-child td{font-weight:700;border-top:1px solid var(--border);border-bottom:none}
 .breakdown-close{float:right;font-size:10px;color:var(--text2);cursor:pointer;padding:0 4px}
-.hero{padding:6px 10px;display:flex;align-items:center;justify-content:space-between;}
+.hero{padding:10px 10px;display:flex;align-items:center;justify-content:space-between;}
 .hero-category{font-size:10px;font-weight:500;color:var(--text2);display:flex;align-items:center;gap:5px;margin-bottom:1px}
 .hero-cat-icon{font-size:11px}
 .hero-title{font-size:14px;font-weight:700;letter-spacing:-0.2px;color:var(--text);line-height:1.2;}
@@ -1341,6 +1341,7 @@ function renderAccount(el,acc){
 }
 
 function heroHTML(catName,title){
+  if(!_mktData){try{var s=localStorage.getItem('_mktData');if(s)_mktData=JSON.parse(s);}catch(e){}}
   var catLine=catName?'<div class="hero-category">'+esc(catName)+'</div>':'';
   return '<div class="hero"><div>'+catLine+'<h1 class="hero-title">'+title+'</h1></div>'
     +'<div id="mktPills" class="mkt-pills-row">'+_mktPillsHTML()+'</div></div>';
@@ -1438,7 +1439,14 @@ function _mktPillsHTML(){
 function _fillMktPills(){
   var html=_mktPillsHTML();
   var el=document.getElementById('mktPills');
-  if(el)el.innerHTML=html;
+  if(el){
+    el.innerHTML=html;
+    // Once hero has real data, hide the nav-bar fallback (was only needed pre-Firebase)
+    if(_mktData){
+      var nb=document.getElementById('mktPillsBar');
+      if(nb)nb.style.display='none';
+    }
+  }
 }
 function fetchMarketIndices(){
   var results={};
