@@ -2486,7 +2486,7 @@ function _buildMoversInner(holdings,mode,valMode){
   var isDollar=valMode==='dollar';
   var getVal=function(r){return isDollar?r.dollar:r.pct;};
   rows.sort(function(a,b){return getVal(b)-getVal(a);});
-  var N=5;
+  var N=10;
   var winners=rows.slice(0,N).filter(function(r){return getVal(r)>0;});
   var losers=rows.slice(-N).filter(function(r){return getVal(r)<0;}).reverse();
   if(!winners.length&&!losers.length){winners=rows.slice(0,Math.min(N,rows.length));}
