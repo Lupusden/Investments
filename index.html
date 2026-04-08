@@ -1342,8 +1342,7 @@ function renderAccount(el,acc){
 
 function heroHTML(catName,title){
   var catLine=catName?'<div class="hero-category">'+esc(catName)+'</div>':'';
-  return '<div class="hero"><div>'+catLine+'<h1 class="hero-title">'+title+'</h1></div>'
-    +'<div id="mktPills" class="mkt-pills-row">'+_mktPillsHTML()+'</div></div>';
+  return '<div class="hero"><div>'+catLine+'<h1 class="hero-title">'+title+'</h1></div></div>';
 }
 function infoBanner(accs){return '<div class="info-banner"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor"/><path d="M7 5.5v3M7 4v.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/></svg> Showing data from: <strong>'+accs.map(function(a){return esc(a.name);}).join(', ')+'</strong></div>';}
 function ccyToggleHTML(){
@@ -1439,9 +1438,6 @@ function _fillMktPills(){
   var html=_mktPillsHTML();
   var el=document.getElementById('mktPillsBar');
   if(el)el.innerHTML=html;
-  // Also update hero pills if present
-  var el2=document.getElementById('mktPills');
-  if(el2)el2.innerHTML=html;
   try{localStorage.setItem('_mktPillsHTML',html);}catch(e){}
 }
 function fetchMarketIndices(){
