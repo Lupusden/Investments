@@ -1455,7 +1455,7 @@ function fetchMarketIndices(){
 
 // ---- HOLDINGS TABLE ----
 function holdingsHTML(holdings,isRollup,acc,accsForCash,heroHtml){
-  var hdrs=isRollup?['Ticker','Web','Name','Account','Exchange','Amount','Cost Price','Book Value','Mkt Price','Market Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %','']:['Ticker','Web','Name','Exchange','Amount','Cost Price','Book Value','Mkt Price','Market Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %',''];
+  var hdrs=isRollup?['Ticker','Web','Name','Account','Exchange','Amount','Cost Price','Book Value','Mkt Price','Mkt Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %','']:['Ticker','Web','Name','Exchange','Amount','Cost Price','Book Value','Mkt Price','Mkt Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %',''];
   var sorted=holdings.slice();
   if(sortCol>=0&&sortCol<hdrs.length){sorted.sort(function(a,b){var va=gSV(a,sortCol,isRollup),vb=gSV(b,sortCol,isRollup);return(va<vb?-1:va>vb?1:0)*sortDir;});}
   var rc=isRollup?' rollup':'';
