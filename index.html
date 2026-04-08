@@ -2459,19 +2459,16 @@ var _moversMode='day'; // 'day'|'total'
 var _moversVal='pct';  // 'pct'|'dollar'
 var _moversHoldings=[];
 
-function _moverRow(name,sym,val,maxAbs,isDollar){
-  var color=val>=0?'var(--green-text)':'var(--red-text)';
-  var barW=maxAbs>0?Math.min(Math.abs(val)/maxAbs*100,100):0;
-  var sign=val>=0?'+':'';
-  var valStr=isDollar?sign+fmtC(val):sign+fmt(Math.abs(val),1)+'%';
-  if(!isDollar&&val<0)valStr='-'+fmt(Math.abs(val),1)+'%';
-  var shortName=name.length>20?name.slice(0,19)+'\u2026':name;
-  return'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
-    +'<div style="flex:0 0 38%;font-size:10.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+esc(name)+' ('+esc(sym)+')">'+esc(shortName)+'</div>'
-    +'<div style="flex:1;height:3px;background:var(--surface2);border-radius:2px;overflow:visible">'
-    +'<div style="height:100%;width:'+barW.toFixed(1)+'%;border-radius:2px;background:'+color+'"></div>'
-    +'</div>'
-    +'<div style="flex:0 0 58px;text-align:right;font-size:10.5px;font-weight:700;color:'+color+';white-space:nowrap">'+valStr+'</div>'
+function _moverRow(name,sym,val,maxAbs,isDollar,isWin){
+  var color=isWin?'var(--green-text)':'var(--red-text)';
+  var fillRgb=isWin?'52,199,89':'255,59,48';
+  var barPct=maxAbs>0?Math.min(Math.abs(val)/maxAbs*100,100):0;
+  var sign=val>=0?'+':'-';
+  var valStr=isDollar?sign+fmtC(Math.abs(val)):sign+fmt(Math.abs(val),1)+'%';
+  var shortName=name.length>26?name.slice(0,25)+'\u2026':name;
+  return'<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px;margin-bottom:2px;border-radius:6px;background:linear-gradient(to right,rgba('+fillRgb+',.09) '+barPct.toFixed(1)+'%,transparent '+barPct.toFixed(1)+'%)" title="'+esc(name)+' ('+esc(sym)+')">'
+    +'<div style="font-size:11px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">'+esc(shortName)+'</div>'
+    +'<div style="font-size:11px;font-weight:700;color:'+color+';white-space:nowrap;flex-shrink:0;padding-left:10px">'+valStr+'</div>'
     +'</div>';
 }
 
@@ -2492,30 +2489,29 @@ function _buildMoversInner(holdings,mode,valMode){
   var N=5;
   var winners=rows.slice(0,N).filter(function(r){return getVal(r)>0;});
   var losers=rows.slice(-N).filter(function(r){return getVal(r)<0;}).reverse();
-  var all=winners.concat(losers);
-  if(!all.length)all=rows.slice(0,Math.min(N,rows.length));
-  var maxAbs=all.reduce(function(m,r){return Math.max(m,Math.abs(getVal(r)));},0.001);
-  var tBtn=function(id,label,fn){
-    var active=mode===id;
-    return'<button onclick="'+fn+'(\''+id+'\')" style="padding:2px 9px;font-size:10px;font-weight:600;border-radius:10px;border:1px solid '+(active?'var(--blue)':'var(--border)')+';cursor:pointer;font-family:inherit;background:'+(active?'var(--blue)':'transparent')+';color:'+(active?'#fff':'var(--text2)')+'">'+label+'</button>';
-  };
-  var vBtn=function(id,label){
-    var active=valMode===id;
-    return'<button onclick="setMoversVal(\''+id+'\')" style="padding:2px 9px;font-size:10px;font-weight:600;border-radius:10px;border:1px solid '+(active?'var(--blue)':'var(--border)')+';cursor:pointer;font-family:inherit;background:'+(active?'var(--blue)':'transparent')+';color:'+(active?'#fff':'var(--text2)')+'">'+label+'</button>';
-  };
+  if(!winners.length&&!losers.length){winners=rows.slice(0,Math.min(N,rows.length));}
+  var winMax=winners.reduce(function(m,r){return Math.max(m,Math.abs(getVal(r)));},0.001);
+  var loseMax=losers.reduce(function(m,r){return Math.max(m,Math.abs(getVal(r)));},0.001);
+  // toggles
+  var tBtn=function(id,label,fn,active){return'<button onclick="'+fn+'(\''+id+'\')" style="padding:2px 9px;font-size:10px;font-weight:600;border-radius:10px;border:1px solid '+(active?'var(--blue)':'var(--border)')+';cursor:pointer;font-family:inherit;background:'+(active?'var(--blue)':'transparent')+';color:'+(active?'#fff':'var(--text2)')+'">'+label+'</button>';};
   var header='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
     +'<div style="font-size:13px;font-weight:700">Top Movers</div>'
     +'<div style="display:flex;gap:4px">'
-    +tBtn('day','Today','setMoversMode')+tBtn('total','Total','setMoversMode')
+    +tBtn('day','Today','setMoversMode',mode==='day')+tBtn('total','Total','setMoversMode',mode==='total')
     +'<span style="width:1px;background:var(--surface2);margin:0 2px;align-self:stretch"></span>'
-    +vBtn('pct','%')+vBtn('dollar','$')
+    +tBtn('pct','%','setMoversVal',valMode==='pct')+tBtn('dollar','$','setMoversVal',valMode==='dollar')
     +'</div></div>';
-  var sectionLabel=function(label,color,mt){
-    return'<div style="font-size:8.5px;font-weight:700;color:'+color+';text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px'+(mt?';margin-top:10px':'')+'">'+(label==='w'?'▲ Winners':'▼ Losers')+'</div>';
-  };
-  var winSection=winners.length?sectionLabel('w','var(--green-text)',false)+winners.map(function(r){return _moverRow(r.name,r.sym,getVal(r),maxAbs,isDollar);}).join(''):'';
-  var loseSection=losers.length?sectionLabel('l','var(--red-text)',!!winners.length)+losers.map(function(r){return _moverRow(r.name,r.sym,getVal(r),maxAbs,isDollar);}).join(''):'';
-  return header+winSection+loseSection;
+  // Section label
+  var sLabel=function(txt,color){return'<div style="font-size:8.5px;font-weight:700;color:'+color+';text-transform:uppercase;letter-spacing:.6px;padding:0 10px;margin-bottom:3px">'+txt+'</div>';};
+  // Two-column grid
+  var winHTML=winners.map(function(r){return _moverRow(r.name,r.sym,getVal(r),winMax,isDollar,true);}).join('');
+  var loseHTML=losers.map(function(r){return _moverRow(r.name,r.sym,getVal(r),loseMax,isDollar,false);}).join('');
+  var body='<div style="display:grid;grid-template-columns:1fr 1px 1fr;gap:0;margin:0 -4px">'
+    +'<div style="padding:0 4px">'+(winners.length?sLabel('▲ Winners','var(--green-text)')+winHTML:'')+'</div>'
+    +'<div style="background:var(--surface2);margin:0"></div>'
+    +'<div style="padding:0 4px">'+(losers.length?sLabel('▼ Losers','var(--red-text)')+loseHTML:'')+'</div>'
+    +'</div>';
+  return header+body;
 }
 
 function setMoversMode(mode){
