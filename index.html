@@ -749,8 +749,12 @@ function loadAll(){
   if(_appLoaded)return;
   _appLoaded=true;
   var ref=firebase.database().ref('appData');
-  ref.once('value',function(snap){
-    var val=snap.val();
+  var mktRef=firebase.database().ref('mktCache');
+  var _appSnap=null,_mktSnap=null,_pending=2;
+  function _tryInit(){
+    if(--_pending>0)return;
+    // Apply app data
+    var val=_appSnap&&_appSnap.val();
     if(val){
       appData=val;
       appData.accounts.forEach(function(a){
@@ -764,17 +768,20 @@ function loadAll(){
         }
       });
     }else{
-      // Firebase returned nothing — start with empty state. NEVER save defaults over real data.
       appData={categories:[],catOrder:[],accounts:[],tabOrder:[]};
     }
+    // Apply market cache from Firebase — overrides localStorage, loads at same time as stocks
+    var mkt=_mktSnap&&_mktSnap.val();
+    if(mkt)_mktData=mkt;
     _setupRealtimeSync(ref);
     initApp();
-  },function(err){
-    // Read failed (network/permissions) — do NOT overwrite anything
+  }
+  ref.once('value',function(snap){_appSnap=snap;_tryInit();},function(err){
     console.error('Firebase read error:',err);
     if(!appData||!appData.accounts)appData={categories:[],catOrder:[],accounts:[],tabOrder:[]};
-    initApp();
+    _pending=1;_tryInit();
   });
+  mktRef.once('value',function(snap){_mktSnap=snap;_tryInit();},function(){_tryInit();});
 }
 function _setSaveStatus(msg,color){
   var el=document.getElementById('syncTime');
@@ -1466,6 +1473,7 @@ function fetchMarketIndices(){
     if(Object.keys(results).length>0){
       _mktData=results;
       try{localStorage.setItem('_mktData',JSON.stringify(results));localStorage.setItem('_mktPillsHTML',_mktPillsHTML());}catch(e){}
+      try{firebase.database().ref('mktCache').set(results);}catch(e){}
       _fillMktPills();
     }
   });
