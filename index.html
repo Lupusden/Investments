@@ -2403,10 +2403,10 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
     canvas._phBound=true;
     ov.addEventListener('mousemove',function(e){
       var pd=canvas._pd;if(!pd)return;
-      // Divide by body zoom so viewport-space offset converts to CSS-pixel (canvas draw) space
       var bz=parseFloat(document.body.style.zoom)||1;
       var rect=ov.getBoundingClientRect();
       var mx=(e.clientX-rect.left)/bz,my=(e.clientY-rect.top)/bz;
+      if(window._chartDbg){console.log(canvas.id,'clientX',e.clientX,'rect.left',rect.left,'rect.width',rect.width,'bz',bz,'pd.W',pd.W,'mx',mx,'offsetX',e.offsetX);};
       var oc=ov.getContext('2d');
       oc.setTransform(dpr,0,0,dpr,0,0);
       oc.clearRect(0,0,pd.W,pd.H);
