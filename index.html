@@ -117,8 +117,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .holdings-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border-light);overflow-x:auto;}
 .holdings-header{padding:5px 10px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--surface2);background:var(--card);border-radius:var(--radius) var(--radius) 0 0;}
 .holdings-title{font-size:11px;font-weight:700}
-.mkt-pills-nav-bar{padding:5px 48px 6px;border-top:1px solid rgba(0,0,0,.06);display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;}
-.mkt-pills-nav-bar:empty{display:none;}
+.mkt-pills-nav-bar{padding:5px 48px 6px;border-top:1px solid rgba(0,0,0,.06);display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;min-height:0;}
+.mkt-pills-nav-bar:not(:has(*)){display:none;}
 .mkt-pills-nav-bar::-webkit-scrollbar{display:none;}
 .mkt-pills-row{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow:hidden;}
 .mkt-pill{display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--card);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);border:1px solid var(--border-light);flex-shrink:0;cursor:pointer;text-decoration:none;color:inherit;transition:box-shadow .15s,border-color .15s;}
@@ -375,7 +375,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
     <button id="loginBtn" onclick="doLogin()" style="width:100%;padding:12px;background:#0071e3;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;">Sign In</button>
   </div>
 </div>
-<nav class="nav"><div class="nav-row-top"><div class="nav-brand-name">Investment Tracker</div><div class="nav-tabs" id="tabBar"></div><div style="display:flex;align-items:center;gap:4px"><span id="adminTab" class="tab tab-primary" onclick="activeTab='admin';renderTabBar();renderAccountBar();render()">Admin</span><span class="tab" onclick="doLogout()">Sign out</span></div></div><div class="nav-row-bottom"><div class="nav-sync"><button class="nav-refresh-btn" onclick="doRefresh()" title="Refresh">↻</button><span class="nav-sync-time" id="syncTime"></span><div class="nav-zoom-ctrl"><input class="nav-zoom-slider" id="zoomSlider" type="range" min="0" max="16" step="1" value="4" oninput="var el=document.getElementById('zoomPct');if(el)el.textContent=Math.round(_fontScales[this.value]*100)+'%'" onchange="setZoom(this.value)"><span class="nav-zoom-pct" id="zoomPct">100%</span></div></div><div id="subTabBar" class="nav-pills-bar"></div><div style="display:flex;align-items:center;gap:4px;visibility:hidden;pointer-events:none"><span class="tab">Admin</span><span class="tab">Sign out</span></div></div><div id="statsBar" class="nav-stats-bar"></div></nav>
+<nav class="nav"><div class="nav-row-top"><div class="nav-brand-name">Investment Tracker</div><div class="nav-tabs" id="tabBar"></div><div style="display:flex;align-items:center;gap:4px"><span id="adminTab" class="tab tab-primary" onclick="activeTab='admin';renderTabBar();renderAccountBar();render()">Admin</span><span class="tab" onclick="doLogout()">Sign out</span></div></div><div class="nav-row-bottom"><div class="nav-sync"><button class="nav-refresh-btn" onclick="doRefresh()" title="Refresh">↻</button><span class="nav-sync-time" id="syncTime"></span><div class="nav-zoom-ctrl"><input class="nav-zoom-slider" id="zoomSlider" type="range" min="0" max="16" step="1" value="4" oninput="var el=document.getElementById('zoomPct');if(el)el.textContent=Math.round(_fontScales[this.value]*100)+'%'" onchange="setZoom(this.value)"><span class="nav-zoom-pct" id="zoomPct">100%</span></div></div><div id="subTabBar" class="nav-pills-bar"></div><div style="display:flex;align-items:center;gap:4px;visibility:hidden;pointer-events:none"><span class="tab">Admin</span><span class="tab">Sign out</span></div></div><div id="statsBar" class="nav-stats-bar"></div><div id="mktPillsBar" class="mkt-pills-nav-bar"></div></nav>
+<script>(function(){try{var h=localStorage.getItem('_mktPillsHTML');if(h){var el=document.getElementById('mktPillsBar');if(el)el.innerHTML=h;}}catch(e){}})();</script>
 
 <div class="wrapper"><div id="appContent"></div></div>
 
@@ -1435,8 +1436,13 @@ function _mktPillsHTML(){
   return html||'<span class="mkt-pill-loading">—</span>';
 }
 function _fillMktPills(){
-  var el=document.getElementById('mktPills');
-  if(el)el.innerHTML=_mktPillsHTML();
+  var html=_mktPillsHTML();
+  var el=document.getElementById('mktPillsBar');
+  if(el)el.innerHTML=html;
+  // Also update hero pills if present
+  var el2=document.getElementById('mktPills');
+  if(el2)el2.innerHTML=html;
+  try{localStorage.setItem('_mktPillsHTML',html);}catch(e){}
 }
 function fetchMarketIndices(){
   var results={};
@@ -3929,9 +3935,6 @@ function _updateNavH(){
   var nav=document.querySelector('.nav');
   if(nav)document.documentElement.style.setProperty('--nav-h',nav.offsetHeight+'px');
 }
-// Populate market pills immediately from localStorage (before Firebase loads)
-(function(){_fillMktPills();})();
-
 function initApp(){
   _chartCachePurgeOldKeys();
   _lastSync=new Date();
