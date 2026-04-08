@@ -1203,7 +1203,7 @@ function renderSummary(el){
   var mergedH=mergeHoldingsBySymbol(allH);
   el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('','All Stocks'))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
   var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);
-  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();_fillMktPills();
+  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
 
 function renderOverview(el){
@@ -1317,7 +1317,7 @@ function renderOverview(el){
     '</div>';
 
   el.innerHTML=statsHTML(gtv,gtc,gtp,gtpp,gtd,gtfx,gtsg,allAccs,gtdiv)+table+botRow;
-  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(allAccs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();_fillMktPills();
+  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(allAccs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
 
 function renderCategory(el,catId){
@@ -1329,7 +1329,7 @@ function renderCategory(el,catId){
   var mergedH=mergeHoldingsBySymbol(allH);
   el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('',esc(cat.name)))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
   var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);
-  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();_fillMktPills();
+  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
 
 function renderAccount(el,acc){
@@ -1337,7 +1337,7 @@ function renderAccount(el,acc){
   var cat=getCategory(acc.categoryId);
   el.innerHTML=statsHTML(s.totalValue,s.totalCost,s.totalPnL,tpp,s.totalDailyPnL,s.totalFxGain,tsg,[acc],s.totalDividends)+holdingsHTML(acc.holdings,false,acc,null,heroHTML(cat?cat.name:'',esc(acc.name)))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(acc.holdings)+'</div></div>';
   var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,false);
-  bindHoldingClicks(el,false,acc);initDonut(acc.holdings,getCashItems([acc]));initPortfolioChart(acc.holdings,_portRange);anim(el);_fillMktPills();_fillMktPills();
+  bindHoldingClicks(el,false,acc);initDonut(acc.holdings,getCashItems([acc]));initPortfolioChart(acc.holdings,_portRange);anim(el);_fillMktPills();
 }
 
 function heroHTML(catName,title){
@@ -1437,13 +1437,8 @@ function _mktPillsHTML(){
 }
 function _fillMktPills(){
   var html=_mktPillsHTML();
-  // Update hero pills (primary position)
   var el=document.getElementById('mktPills');
   if(el)el.innerHTML=html;
-  // Hide nav bar fallback once app is rendered
-  var nb=document.getElementById('mktPillsBar');
-  if(nb)nb.style.display='none';
-  try{localStorage.setItem('_mktPillsHTML',html);}catch(e){}
 }
 function fetchMarketIndices(){
   var results={};
@@ -1457,7 +1452,13 @@ function fetchMarketIndices(){
         results[def.sym]={price:price,chg:price-prev};
       }
     }).catch(function(){});
-  })).then(function(){_mktData=results;try{localStorage.setItem('_mktData',JSON.stringify(results));}catch(e){}_fillMktPills();});
+  })).then(function(){
+    if(Object.keys(results).length>0){
+      _mktData=results;
+      try{localStorage.setItem('_mktData',JSON.stringify(results));localStorage.setItem('_mktPillsHTML',_mktPillsHTML());}catch(e){}
+      _fillMktPills();
+    }
+  });
 }
 
 // ---- HOLDINGS TABLE ----
@@ -2573,7 +2574,7 @@ function renderTrades(el,acc){
     '<div class="trades-filters"><button class="filter-btn'+(tradeFilter==='all'?' active':'')+'" onclick="setTradeFilter(\'all\')">All</button><button class="filter-btn'+(tradeFilter==='buys'?' active':'')+'" onclick="setTradeFilter(\'buys\')">Buys</button><button class="filter-btn'+(tradeFilter==='sells'?' active':'')+'" onclick="setTradeFilter(\'sells\')">Sells</button></div>'+
     (gHTML||'<div class="empty-state">No trades yet.</div>')+
     '</div>';
-  anim(el);_fillMktPills();_fillMktPills();
+  anim(el);_fillMktPills();
 }
 
 function toggleTradeGroup(sym){
