@@ -1803,11 +1803,20 @@ function _initSingleDonut(canvasId,tooltipId,items,total,showValue){
   var curHov=null;
   function getHov(mx,my){var dx=mx-cx,dy=my-cy,d=Math.sqrt(dx*dx+dy*dy);if(d<ri||d>r+8)return-1;var ang=Math.atan2(dy,dx)+Math.PI/2;if(ang<0)ang+=Math.PI*2;for(var i=0;i<segs.length;i++){var s=segs[i].start+Math.PI/2,e=segs[i].end+Math.PI/2;if(s<0)s+=Math.PI*2;if(e<0)e+=Math.PI*2;if(e>s){if(ang>=s&&ang<=e)return i;}else{if(ang>=s||ang<=e)return i;}}return-1;}
   canvas.addEventListener('mousemove',function(e){
-    var rect=canvas.getBoundingClientRect();
-    var mx=(e.clientX-rect.left)*(W/rect.width),my=(e.clientY-rect.top)*(H/rect.height);
+    // e.offsetX/Y are in canvas CSS coordinate space — correct regardless of body zoom
+    var mx=e.offsetX,my=e.offsetY;
     var hi=getHov(mx,my),hov=hi>=0?hi:null;
     if(hov!==curHov){curHov=hov;draw(hov);}
-    if(hov!=null&&tooltip){var seg=segs[hov];var pct=(seg.value/total*100).toFixed(1);tooltip.style.opacity='1';tooltip.textContent=seg.name+': '+fmtC(seg.value)+' ('+pct+'%)';var tx=e.clientX-rect.left+14,ty=e.clientY-rect.top-22;if(tx+160>rect.width)tx=e.clientX-rect.left-170;if(ty<0)ty=e.clientY-rect.top+10;tooltip.style.left=tx+'px';tooltip.style.top=ty+'px';}else if(tooltip)tooltip.style.opacity='0';
+    if(hov!=null&&tooltip){
+      var seg=segs[hov];var pct=(seg.value/total*100).toFixed(1);
+      tooltip.style.opacity='1';tooltip.textContent=seg.name+': '+fmtC(seg.value)+' ('+pct+'%)';
+      // Tooltip is in .donut-wrap; canvas.offsetLeft accounts for centering offset
+      var ox=canvas.offsetLeft;
+      var tx=mx+ox+14,ty=my+canvas.offsetTop-22;
+      if(tx+160>canvas.parentElement.clientWidth)tx=mx+ox-170;
+      if(ty<0)ty=my+canvas.offsetTop+10;
+      tooltip.style.left=tx+'px';tooltip.style.top=ty+'px';
+    }else if(tooltip)tooltip.style.opacity='0';
   });
   canvas.addEventListener('mouseleave',function(){curHov=null;draw(null);if(tooltip)tooltip.style.opacity='0';});
 }
@@ -2394,8 +2403,8 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
     canvas._phBound=true;
     ov.addEventListener('mousemove',function(e){
       var pd=canvas._pd;if(!pd)return;
-      var rect=ov.getBoundingClientRect();
-      var mx=(e.clientX-rect.left)*(pd.W/rect.width);
+      // e.offsetX/Y are in the overlay's CSS coordinate space — correct regardless of body zoom
+      var mx=e.offsetX,my=e.offsetY;
       var oc=ov.getContext('2d');
       oc.setTransform(dpr,0,0,dpr,0,0);
       oc.clearRect(0,0,pd.W,pd.H);
@@ -2408,9 +2417,9 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
       if(tip){
         tip.textContent=_portDateLabel(pd.dates[i])+' · '+fmtC(pd.values[i]);
         tip.style.display='block';
-        var pr=ov.parentElement.getBoundingClientRect();
-        tip.style.left=Math.min(e.clientX-pr.left+14,pr.width-160)+'px';
-        tip.style.top=Math.max(e.clientY-pr.top-32,4)+'px';
+        // Tooltip positioned within parent using CSS px (ov is at top:0;left:0 of parent)
+        tip.style.left=Math.min(mx+14,pd.W-160)+'px';
+        tip.style.top=Math.max(my-32,4)+'px';
       }
       var hx=pd.xOf(i),hy=pd.yOf(pd.values[i]);
       oc.beginPath();oc.moveTo(hx,pd.PT);oc.lineTo(hx,pd.PT+pd.cH);
@@ -2425,8 +2434,7 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
     });
     ov.addEventListener('click',function(e){
       var pd=canvas._pd;if(!pd)return;
-      var rect=ov.getBoundingClientRect();
-      var mx=(e.clientX-rect.left)*(pd.W/rect.width);
+      var mx=e.offsetX;
       if(mx<pd.PL||mx>pd.W-pd.PR)return;
       var idx=Math.max(0,Math.min(pd.n-1,Math.round((mx-pd.PL)/pd.cW*(pd.n-1))));
       showPortBreakdown(canvas.id,pd.dates[idx]);
