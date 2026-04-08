@@ -118,7 +118,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .holdings-header{padding:5px 10px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--surface2);background:var(--card);border-radius:var(--radius) var(--radius) 0 0;}
 .holdings-title{font-size:11px;font-weight:700}
 .mkt-pills-row{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow:hidden;}
-.mkt-pill{display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--card);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);border:1px solid var(--border-light);flex-shrink:0;}
+.mkt-pill{display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--card);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);border:1px solid var(--border-light);flex-shrink:0;cursor:pointer;text-decoration:none;color:inherit;transition:box-shadow .15s,border-color .15s;}
+.mkt-pill:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);border-color:var(--blue);}
 .mkt-pill-arrow{font-size:8px;line-height:1;margin-top:2px;}
 .mkt-pill-arrow.up{color:#34c759;}.mkt-pill-arrow.dn{color:#ff3b30;}
 .mkt-pill-body{display:flex;flex-direction:column;gap:0;}
@@ -1394,6 +1395,7 @@ var _mktDefs=[
   {sym:'CL=F',label:'OIL (WTI)',prefix:'US$',suffix:'',dec:2},
   {sym:'^TMBMKCA-10Y',label:'GCAN (10-YR)',prefix:'',suffix:'%',dec:2},
 ];
+var _mktYfUrl='https://finance.yahoo.com/quote/';
 var _mktData=null;
 function _mktPillsHTML(){
   if(!_mktData)return '<span class="mkt-pill-loading">Loading\u2026</span>';
@@ -1419,11 +1421,13 @@ function _mktPillsHTML(){
       valStr=fmt(r.price);
       chgStr=sign+Math.abs(pct).toFixed(1)+'%/'+sign+chgFmt;
     }
-    html+='<div class="mkt-pill"><div class="mkt-pill-arrow '+cls+'">'+arrow+'</div>'
+    var href=_mktYfUrl+encodeURIComponent(def.sym);
+    html+='<a class="mkt-pill" href="'+href+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'
+      +'<div class="mkt-pill-arrow '+cls+'">'+arrow+'</div>'
       +'<div class="mkt-pill-body"><div class="mkt-pill-name">'+esc(def.label)+'</div>'
       +'<div class="mkt-pill-val">'+valStr+'</div>'
       +'<div class="mkt-pill-chg '+cls+'">'+chgStr+'</div>'
-      +'</div></div>';
+      +'</div></a>';
   });
   return html||'<span class="mkt-pill-loading">—</span>';
 }
@@ -1432,16 +1436,18 @@ function _fillMktPills(){
   if(el)el.innerHTML=_mktPillsHTML();
 }
 function fetchMarketIndices(){
-  var pending=_mktDefs.length,results={};
-  _mktDefs.forEach(function(def){
-    var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(def.sym)+'?interval=1m&range=1d&_t='+Date.now();
-    yahooFetch(url).then(function(data){
-      var meta=data&&data.chart&&data.chart.result&&data.chart.result[0]&&data.chart.result[0].meta;
-      if(meta){var price=meta.regularMarketPrice||0,prev=meta.chartPreviousClose||meta.previousClose||price;results[def.sym]={price:price,chg:price-prev};}
-    }).catch(function(){}).finally(function(){
-      if(--pending===0){_mktData=results;_fillMktPills();}
+  var syms=_mktDefs.map(function(d){return d.sym;}).join(',');
+  var url='https://query2.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(syms)+'&_t='+Date.now();
+  yahooFetch(url).then(function(data){
+    var quotes=(data&&data.quoteResponse&&data.quoteResponse.result)||[];
+    var results={};
+    quotes.forEach(function(q){
+      if(q.regularMarketPrice!=null){
+        results[q.symbol]={price:q.regularMarketPrice,chg:q.regularMarketChange||0};
+      }
     });
-  });
+    _mktData=results;_fillMktPills();
+  }).catch(function(){});
 }
 
 // ---- HOLDINGS TABLE ----
