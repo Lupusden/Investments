@@ -1396,7 +1396,7 @@ var _mktDefs=[
   {sym:'^TMBMKCA-10Y',label:'GCAN (10-YR)',prefix:'',suffix:'%',dec:2},
 ];
 var _mktYfUrl='https://finance.yahoo.com/quote/';
-var _mktData=null;
+var _mktData=(function(){try{var s=localStorage.getItem('_mktData');return s?JSON.parse(s):null;}catch(e){return null;}})();
 function _mktPillsHTML(){
   if(!_mktData)return '<span class="mkt-pill-loading">Loading\u2026</span>';
   var html='';
@@ -1447,7 +1447,7 @@ function fetchMarketIndices(){
         results[def.sym]={price:price,chg:price-prev};
       }
     }).catch(function(){});
-  })).then(function(){_mktData=results;_fillMktPills();});
+  })).then(function(){_mktData=results;try{localStorage.setItem('_mktData',JSON.stringify(results));}catch(e){}_fillMktPills();});
 }
 
 // ---- HOLDINGS TABLE ----
