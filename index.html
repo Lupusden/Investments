@@ -1436,18 +1436,18 @@ function _fillMktPills(){
   if(el)el.innerHTML=_mktPillsHTML();
 }
 function fetchMarketIndices(){
-  var syms=_mktDefs.map(function(d){return d.sym;}).join(',');
-  var url='https://query2.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(syms)+'&_t='+Date.now();
-  yahooFetch(url).then(function(data){
-    var quotes=(data&&data.quoteResponse&&data.quoteResponse.result)||[];
-    var results={};
-    quotes.forEach(function(q){
-      if(q.regularMarketPrice!=null){
-        results[q.symbol]={price:q.regularMarketPrice,chg:q.regularMarketChange||0};
+  var results={};
+  Promise.all(_mktDefs.map(function(def){
+    var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(def.sym)+'?interval=1d&range=1d&_t='+Date.now();
+    return yahooFetch(url).then(function(data){
+      var meta=data&&data.chart&&data.chart.result&&data.chart.result[0]&&data.chart.result[0].meta;
+      if(meta&&meta.regularMarketPrice!=null){
+        var price=meta.regularMarketPrice;
+        var prev=meta.chartPreviousClose||meta.previousClose||price;
+        results[def.sym]={price:price,chg:price-prev};
       }
-    });
-    _mktData=results;_fillMktPills();
-  }).catch(function(){});
+    }).catch(function(){});
+  })).then(function(){_mktData=results;_fillMktPills();});
 }
 
 // ---- HOLDINGS TABLE ----
