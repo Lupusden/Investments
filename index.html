@@ -99,11 +99,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .breakdown-tbl td:first-child{text-align:left;font-weight:600}
 .breakdown-tbl tr:last-child td{font-weight:700;border-top:1px solid var(--border);border-bottom:none}
 .breakdown-close{float:right;font-size:10px;color:var(--text2);cursor:pointer;padding:0 4px}
-.hero{padding:2px 0 0;display:flex;align-items:center;justify-content:space-between;}
+.hero{padding:0;display:flex;align-items:center;justify-content:space-between;}
 .hero-category{font-size:10px;font-weight:500;color:var(--text2);display:flex;align-items:center;gap:5px;margin-bottom:1px}
 .hero-cat-icon{font-size:11px}
-.hero-title{font-size:14px;font-weight:700;letter-spacing:-0.2px;color:var(--text)}
-.sticky-table-head{}
+.hero-title{font-size:14px;font-weight:700;letter-spacing:-0.2px;color:var(--text);line-height:1.2;}
+.sticky-table-head{display:flex;flex-direction:column;}
 .nav-stats-bar{padding:4px 48px 5px;border-top:1px solid rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between;gap:12px;}
 .nav-stats-bar:empty{display:none;}
 .stats-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;flex:1;margin-bottom:0}
@@ -115,8 +115,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .stat-sub{font-size:9.5px;color:var(--text2);white-space:nowrap}
 .stat-last-col{display:flex;flex-direction:column;gap:2px}
 .holdings-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border-light);overflow-x:auto;}
-.holdings-header{padding:2px 10px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--surface2);background:var(--card);border-radius:var(--radius) var(--radius) 0 0;}
-.holdings-title{font-size:11px;font-weight:700}
+.holdings-header{padding:0 10px 3px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--surface2);background:var(--card);border-radius:var(--radius) var(--radius) 0 0;}
+.holdings-title{font-size:11px;font-weight:600;color:var(--text2);line-height:1.2;}
 .mkt-pills-nav-bar{padding:5px 48px 6px;border-top:1px solid rgba(0,0,0,.06);display:flex;align-items:center;justify-content:flex-end;gap:6px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;min-height:0;}
 .mkt-pills-nav-bar:not(:has(*)){display:none;}
 .mkt-pills-nav-bar::-webkit-scrollbar{display:none;}
