@@ -76,16 +76,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .main-grid>*{min-width:0}
 @media(max-width:1100px){.main-grid{grid-template-columns:1fr}}
 @media(max-width:768px){
-  .wrapper{padding:6px 12px 20px;}
-  .nav-row-top{padding:0 12px;}
-  .nav-row-bottom{padding:2px 12px 4px;}
-  .nav-stats-bar{padding:4px 12px 5px;}
-  .mkt-pills-nav-bar{padding:5px 12px 6px;}
+  .wrapper{padding:6px 10px 20px;}
+  .nav-row-top{padding:0 10px;height:36px;}
+  .nav-row-bottom{padding:2px 10px 4px;grid-template-columns:1fr;}
+  .nav-tabs{justify-content:flex-start;overflow-x:auto;}
+  .nav-pills-bar{display:none;}
+  .nav-stats-bar{padding:4px 10px 5px;flex-wrap:wrap;gap:6px;}
+  .mkt-pills-nav-bar{padding:5px 10px 6px;}
   .nav-zoom-ctrl{display:none;}
-  .bottom-row{grid-template-columns:1fr;}
-  .hero{padding:8px 6px;}
+  .nav-sync{display:none;}
+  .bottom-row{grid-template-columns:1fr !important;}
+  .hero{padding:8px 4px;}
   .holdings-header{padding:0 6px 4px;}
   .tbl-head,.holding-row,.total-row{padding:0 6px;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
 }
 .bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;align-items:stretch}
 .charts-col{display:flex;flex-direction:column;gap:12px;min-width:0;overflow:hidden}
@@ -3843,7 +3847,8 @@ async function fetchAllPrices(){
 var _fontScales=[0.8,0.85,0.9,0.95,1,1.05,1.1,1.15,1.2,1.25,1.3,1.35,1.4,1.45,1.5,1.55,1.6];
 var _fontScaleIdx=parseInt(localStorage.getItem('folio_font_scale')||'4');
 function _applyZoom(){
-  document.body.style.zoom=_fontScales[_fontScaleIdx];
+  var scale=window.innerWidth<=768?1:_fontScales[_fontScaleIdx];
+  document.body.style.zoom=scale;
   var pct=Math.round(_fontScales[_fontScaleIdx]*100)+'%';
   var el=document.getElementById('zoomPct');if(el)el.textContent=pct;
   var sl=document.getElementById('zoomSlider');if(sl)sl.value=_fontScaleIdx;
