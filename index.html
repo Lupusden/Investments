@@ -1956,7 +1956,7 @@ function _chartCardHTML(canvasId,tooltipId,msgId,wrapClass,title,activeRange){
   var bdId=canvasId+'Bd';
   return'<div class="'+wrapClass+'"><div class="port-chart-header"><div style="display:flex;align-items:baseline;gap:8px"><span class="port-chart-title">'+title+'</span><span style="font-size:9.5px;color:var(--text2);font-style:italic">Click any point for breakdown</span></div><div class="range-btns">'+btns+'</div></div><div class="port-chart-wrap"><canvas id="'+canvasId+'" class="port-chart-canvas" height="220"></canvas><div id="'+tooltipId+'" class="port-chart-tooltip"></div></div><div id="'+msgId+'" class="port-chart-msg" style="display:none">Loading...</div><div id="'+bdId+'" class="breakdown-panel"></div></div>';
 }
-function portfolioChartHTML(){return _chartCardHTML('portChartCanvas','portChartTooltip','portChartMsg','port-chart-card','Portfolio History',_portRange);}
+function portfolioChartHTML(){return _chartCardHTML('portChartCanvas','portChartTooltip','portChartMsg','port-chart-card','Mkt Value (excl Cash)',_portRange);}
 function profitChartHTML(){return _chartCardHTML('profChartCanvas','profChartTooltip','profChartMsg','profit-chart-card','Profit History',_portRange);}
 
 function setPortRange(r){
