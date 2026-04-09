@@ -117,6 +117,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .breakdown-tbl td:first-child{text-align:left;font-weight:600}
 .breakdown-tbl tr:last-child td{font-weight:700;border-top:1px solid var(--border);border-bottom:none}
 .breakdown-close{float:right;font-size:10px;color:var(--text2);cursor:pointer;padding:0 4px}
+.breakdown-close-btn{background:var(--blue);color:#fff;border:none;border-radius:20px;font-size:11px;font-weight:600;padding:4px 12px;cursor:pointer;flex-shrink:0;}
+.breakdown-close-btn:hover{filter:brightness(.88)}
 .hero{padding:10px 10px;display:flex;align-items:center;justify-content:space-between;}
 .hero-category{font-size:10px;font-weight:500;color:var(--text2);display:flex;align-items:center;gap:5px;margin-bottom:1px}
 .hero-cat-icon{font-size:11px}
@@ -2508,27 +2510,69 @@ function showPortBreakdown(canvasId,date){
     var mv=shares*price*fx;
     var cb=lots.reduce(function(s,l){return s+_chartCostBasis(l,h);},0);
     var pl=mv-cb;
-    rows.push({sym:h.symbol,shares:shares,price:price*fx,mv:mv,cb:cb,pl:pl});
+    rows.push({sym:h.symbol,name:h.name||h.symbol,shares:shares,price:price*fx,mv:mv,cb:cb,pl:pl});
   });
   if(!rows.length){bd.style.display='none';return;}
 
-  rows.sort(function(a,b){return a.pl-b.pl;});
   var totMV=rows.reduce(function(s,r){return s+r.mv;},0);
   var totCB=rows.reduce(function(s,r){return s+r.cb;},0);
   var totPL=totMV-totCB;
 
-  var html='<div class="breakdown-date">'+_portDateLabel(date)+' breakdown <span class="breakdown-close" onclick="document.getElementById(\''+bdId+'\').style.display=\'none\'">✕</span></div>';
-  html+='<table class="breakdown-tbl"><thead><tr><th>Symbol</th><th>Shares</th><th>Price</th><th>Mkt Value</th><th>Cost Basis</th><th>P/L</th><th>P/L%</th></tr></thead><tbody>';
-  rows.forEach(function(r){
-    var pct=r.cb>0?(r.pl/r.cb*100):0;
-    var cls=r.pl>=0?'pos':'neg';
-    html+='<tr><td>'+esc(r.sym)+'</td><td>'+fmt(r.shares,3)+'</td><td>'+fmtC(r.price)+'</td><td>'+fmtC(r.mv)+'</td><td>'+fmtC(r.cb)+'</td><td class="'+cls+'">'+fmtC(r.pl)+'</td><td class="'+cls+'">'+fmtPct(pct)+'</td></tr>';
-  });
-  var tpct=totCB>0?(totPL/totCB*100):0;
-  var tcls=totPL>=0?'pos':'neg';
-  html+='<tr><td>Total</td><td></td><td></td><td>'+fmtC(totMV)+'</td><td>'+fmtC(totCB)+'</td><td class="'+tcls+'">'+fmtC(totPL)+'</td><td class="'+tcls+'">'+fmtPct(tpct)+'</td></tr>';
-  html+='</tbody></table>';
-  bd.innerHTML=html;bd.style.display='block';
+  var _bdSortCol=bd._bdSortCol||'pl';
+  var _bdSortDir=bd._bdSortDir||-1;
+  function _bdSort(col){
+    if(_bdSortCol===col){_bdSortDir*=-1;}else{_bdSortCol=col;_bdSortDir=col==='sym'||col==='name'?1:-1;}
+    bd._bdSortCol=_bdSortCol;bd._bdSortDir=_bdSortDir;
+    _renderBd();
+  }
+  window['_bdSort_'+bdId]=_bdSort;
+
+  function _renderBd(){
+    var sc=bd._bdSortCol||'pl',sd=bd._bdSortDir||-1;
+    var sorted=rows.slice().sort(function(a,b){
+      var va=a[sc],vb=b[sc];
+      if(typeof va==='string')return va.localeCompare(vb)*sd;
+      return(va-vb)*sd;
+    });
+    var tpct=totCB>0?(totPL/totCB*100):0;
+    var tcls=totPL>=0?'pos':'neg';
+    function thArr(col,label,align){
+      var active=sc===col;var arr=active?(sd===1?'▲':'▼'):'';
+      return'<th style="cursor:pointer;'+(align?'text-align:'+align+';':'')+(active?'color:var(--blue);':'')+'" onclick="_bdSort_'+bdId+'(\''+col+'\')">'+label+(arr?'<span style="font-size:8px;margin-left:2px">'+arr+'</span>':'')+'</th>';
+    }
+    var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      +'<span class="breakdown-date" style="margin:0">'+_portDateLabel(date)+' breakdown</span>'
+      +'<button class="breakdown-close-btn" onclick="document.getElementById(\''+bdId+'\').style.display=\'none\'">✕ Close</button>'
+      +'</div>';
+    h+='<table class="breakdown-tbl"><thead><tr>'
+      +thArr('sym','Symbol','left')
+      +thArr('name','Company','left')
+      +thArr('shares','Shares')
+      +thArr('price','Mkt Price')
+      +thArr('mv','Mkt Value')
+      +thArr('cb','Book Value')
+      +thArr('pl','P/L')
+      +thArr('pl','P/L%')
+      +'</tr></thead><tbody>';
+    sorted.forEach(function(r){
+      var pct=r.cb>0?(r.pl/r.cb*100):0;
+      var cls=r.pl>=0?'pos':'neg';
+      h+='<tr><td style="text-align:left;font-weight:600">'+esc(r.sym)+'</td>'
+        +'<td style="text-align:left;color:var(--text2)">'+esc(r.name)+'</td>'
+        +'<td>'+Math.round(r.shares)+'</td>'
+        +'<td>'+fmtC(r.price,2)+'</td>'
+        +'<td>'+fmtC(r.mv)+'</td>'
+        +'<td>'+fmtC(r.cb)+'</td>'
+        +'<td class="'+cls+'">'+fmtC(r.pl)+'</td>'
+        +'<td class="'+cls+'">'+fmtPct(pct)+'</td></tr>';
+    });
+    h+='<tr><td style="text-align:left">Total</td><td></td><td></td><td></td><td>'+fmtC(totMV)+'</td><td>'+fmtC(totCB)+'</td><td class="'+tcls+'">'+fmtC(totPL)+'</td><td class="'+tcls+'">'+fmtPct(tpct)+'</td></tr>';
+    h+='</tbody></table>';
+    bd.innerHTML=h;
+  }
+  bd._bdSortCol='pl';bd._bdSortDir=-1;
+  _renderBd();
+  bd.style.display='block';
 }
 
 // ---- TOP MOVERS WIDGET ----
