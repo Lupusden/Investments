@@ -90,8 +90,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
   .right-charts-col{order:1;}
   .hero{padding:8px 4px;}
   .holdings-header{padding:0 6px 4px;}
-  .tbl-head,.holding-row,.total-row{padding:0 6px;}
+  .tbl-head,.holding-row,.total-row{padding:0 4px;}
   .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .tbl-col{font-size:8px;padding:2px 2px;letter-spacing:0;}
+  .cell{font-size:9px;padding:1px 2px;}
+  .cell-sym .sym{font-size:9px;}
+  .cell-name-col{font-size:9px;}
 }
 .bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;align-items:stretch}
 .charts-col{display:flex;flex-direction:column;gap:12px;min-width:0;overflow:hidden}
@@ -1161,32 +1165,37 @@ function switchSub(sub){
 // ---- RENDER ----
 function autoSizeCols(card,isRollup){
   var cnv=document.createElement('canvas'),ctx=cnv.getContext('2d');
-  var PAD=14,MIN=28;
+  var mobile=window.innerWidth<=768;
+  var PAD=mobile?6:14,MIN=mobile?18:28;
+  var cellFont=mobile?'9px -apple-system,sans-serif':'11px -apple-system,sans-serif';
+  var hdrFont=mobile?'600 8px -apple-system,sans-serif':'600 9.5px -apple-system,sans-serif';
   function tw(text,font){ctx.font=font;return Math.ceil(ctx.measureText(String(text||'')).width);}
   var w=[];
   function bump(i,px){if(!w[i]||w[i]<px)w[i]=px;}
-  // measure headers (9.5px bold uppercase + letter-spacing ~0.4px)
+  // measure headers
   card.querySelectorAll('.tbl-col').forEach(function(el,i){
     var t=el.textContent.replace(/[▲▼]/g,'').trim();
-    bump(i,tw(t.toUpperCase(),'600 9.5px -apple-system,sans-serif')+t.length*0.6+PAD);
+    bump(i,tw(t.toUpperCase(),hdrFont)+t.length*(mobile?0.2:0.6)+PAD);
   });
-  // measure data cells (11px)
+  // measure data cells
   card.querySelectorAll('.holding-row .cell,.total-row .cell').forEach(function(el){
     var row=el.parentElement;var i=Array.prototype.indexOf.call(row.children,el);
-    var t=el.textContent.trim();if(t)bump(i,tw(t,'11px -apple-system,sans-serif')+PAD);
+    var t=el.textContent.trim();if(t)bump(i,tw(t,cellFont)+PAD);
   });
   if(!w.length)return;
   var nameIdx=2,arrowIdx=w.length-1;
   // Calculate available width and scale fixed columns down if needed
-  var availWidth=card.clientWidth-20; // subtract horizontal padding
+  var availWidth=card.clientWidth-(mobile?8:20);
   var fixedTotal=0;
   w.forEach(function(v,i){if(i!==nameIdx&&i!==arrowIdx)fixedTotal+=Math.max(v||MIN,MIN);});
-  fixedTotal+=28; // arrow col
-  var nameMin=80;
-  var scale=availWidth>0&&(fixedTotal+nameMin)>availWidth?Math.max(0.6,(availWidth-nameMin)/fixedTotal):1;
+  fixedTotal+=(mobile?16:28); // arrow col
+  var nameMin=mobile?50:80;
+  var scaleMin=mobile?0.4:0.6;
+  var scale=availWidth>0&&(fixedTotal+nameMin)>availWidth?Math.max(scaleMin,(availWidth-nameMin)/fixedTotal):1;
+  var arrowW=mobile?16:28;
   var tpl=w.map(function(v,i){
     if(i===nameIdx)return'minmax('+nameMin+'px,1fr)';
-    if(i===arrowIdx)return'28px';
+    if(i===arrowIdx)return arrowW+'px';
     return Math.max(Math.round(Math.max(v||MIN,MIN)*scale),MIN)+'px';
   }).join(' ');
   card.style.setProperty(isRollup?'--rollup-cols':'--cols',tpl);
