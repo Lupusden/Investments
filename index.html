@@ -90,12 +90,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
   .right-charts-col{order:1;}
   .hero{padding:8px 4px;}
   .holdings-header{padding:0 6px 4px;}
-  .tbl-head,.holding-row,.total-row{padding:0 4px;}
+  .tbl-head,.holding-row,.total-row{padding:0 6px;}
   .stats-grid{grid-template-columns:repeat(2,1fr);}
-  .tbl-col{font-size:8px;padding:2px 2px;letter-spacing:0;}
-  .cell{font-size:9px;padding:1px 2px;}
-  .cell-sym .sym{font-size:9px;}
-  .cell-name-col{font-size:9px;}
 }
 .bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;align-items:stretch}
 .charts-col{display:flex;flex-direction:column;gap:12px;min-width:0;overflow:hidden}
@@ -145,7 +141,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .stat-val-row{display:flex;align-items:baseline;justify-content:space-between;gap:4px}
 .stat-sub{font-size:9.5px;color:var(--text2);white-space:nowrap}
 .stat-last-col{display:flex;flex-direction:column;gap:2px}
-.holdings-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border-light);overflow-x:auto;}
+.holdings-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border-light);overflow:hidden;}
 .holdings-header{padding:0 10px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--surface2);background:var(--card);border-radius:var(--radius) var(--radius) 0 0;}
 .holdings-title{font-size:11px;font-weight:600;color:var(--text2);line-height:1.2;}
 .mkt-pills-nav-bar{padding:5px 48px 6px;border-top:1px solid rgba(0,0,0,.06);display:flex;align-items:center;justify-content:flex-end;gap:6px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;min-height:0;}
@@ -168,8 +164,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .btn-add{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-pill);font-size:12px;font-weight:500;cursor:pointer;transition:filter .15s;font-family:inherit;letter-spacing:-.01em}
 .btn-add:hover{filter:brightness(.93)}
 .btn-sm{padding:4px 10px;font-size:11.5px}
-.holdings-scroll{}
-.holdings-rows{}
+.holdings-scroll{overflow-x:auto;}
+.holdings-rows{min-width:max-content;}
 .tbl-head{display:grid;grid-template-columns:var(--cols);gap:0;padding:0 10px;background:var(--bg);border-bottom:1px solid var(--border);}
 .tbl-head.rollup{grid-template-columns:var(--rollup-cols)}
 .tbl-col{padding:3px 4px;font-size:10px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;white-space:nowrap;overflow:hidden;user-select:none;display:flex;align-items:center;gap:3px}
@@ -1165,50 +1161,46 @@ function switchSub(sub){
 // ---- RENDER ----
 function autoSizeCols(card,isRollup){
   var cnv=document.createElement('canvas'),ctx=cnv.getContext('2d');
-  var mobile=window.innerWidth<=768;
-  var PAD=mobile?6:14,MIN=mobile?18:28;
-  var cellFont=mobile?'9px -apple-system,sans-serif':'11px -apple-system,sans-serif';
-  var hdrFont=mobile?'600 8px -apple-system,sans-serif':'600 9.5px -apple-system,sans-serif';
+  var PAD=14,MIN=28;
   function tw(text,font){ctx.font=font;return Math.ceil(ctx.measureText(String(text||'')).width);}
   var w=[];
   function bump(i,px){if(!w[i]||w[i]<px)w[i]=px;}
-  // measure headers
+  // measure headers (9.5px bold uppercase + letter-spacing ~0.4px)
   card.querySelectorAll('.tbl-col').forEach(function(el,i){
     var t=el.textContent.replace(/[▲▼]/g,'').trim();
-    bump(i,tw(t.toUpperCase(),hdrFont)+t.length*(mobile?0.2:0.6)+PAD);
+    bump(i,tw(t.toUpperCase(),'600 9.5px -apple-system,sans-serif')+t.length*0.6+PAD);
   });
-  // measure data cells
+  // measure data cells (11px)
   card.querySelectorAll('.holding-row .cell,.total-row .cell').forEach(function(el){
     var row=el.parentElement;var i=Array.prototype.indexOf.call(row.children,el);
-    var t=el.textContent.trim();if(t)bump(i,tw(t,cellFont)+PAD);
+    var t=el.textContent.trim();if(t)bump(i,tw(t,'11px -apple-system,sans-serif')+PAD);
   });
   if(!w.length)return;
   var nameIdx=2,arrowIdx=w.length-1;
-  // Calculate available width and scale fixed columns down if needed
-  var availWidth=card.clientWidth-(mobile?8:20);
+  var nameMin=80;
+  // On mobile, don't scale — let the card scroll horizontally at natural widths
+  var mobile=window.innerWidth<=768;
+  var availWidth=card.clientWidth-20;
   var fixedTotal=0;
   w.forEach(function(v,i){if(i!==nameIdx&&i!==arrowIdx)fixedTotal+=Math.max(v||MIN,MIN);});
-  fixedTotal+=(mobile?16:28); // arrow col
-  var nameMin=mobile?50:80;
-  var scaleMin=mobile?0.4:0.6;
-  var scale=availWidth>0&&(fixedTotal+nameMin)>availWidth?Math.max(scaleMin,(availWidth-nameMin)/fixedTotal):1;
-  var arrowW=mobile?16:28;
+  fixedTotal+=28;
+  var scale=(!mobile&&availWidth>0&&(fixedTotal+nameMin)>availWidth)?Math.max(0.6,(availWidth-nameMin)/fixedTotal):1;
   var tpl=w.map(function(v,i){
     if(i===nameIdx)return'minmax('+nameMin+'px,1fr)';
-    if(i===arrowIdx)return arrowW+'px';
+    if(i===arrowIdx)return'28px';
     return Math.max(Math.round(Math.max(v||MIN,MIN)*scale),MIN)+'px';
   }).join(' ');
   card.style.setProperty(isRollup?'--rollup-cols':'--cols',tpl);
 }
 
 function _syncTblHeadScroll(){
-  // Sync .tbl-head horizontal scroll with .holdings-rows (they share column widths but tbl-head is outside overflow container)
+  // Sync .tbl-head with .holdings-scroll horizontal scroll
   document.querySelectorAll('.holdings-card').forEach(function(card){
     var head=card.querySelector('.tbl-head');
-    var rows=card.querySelector('.holdings-rows');
-    if(!head||!rows||rows._scrollBound)return;
-    rows._scrollBound=true;
-    rows.addEventListener('scroll',function(){head.style.transform='translateX(-'+rows.scrollLeft+'px)';});
+    var scroll=card.querySelector('.holdings-scroll');
+    if(!head||!scroll||scroll._scrollBound)return;
+    scroll._scrollBound=true;
+    scroll.addEventListener('scroll',function(){head.style.transform='translateX(-'+scroll.scrollLeft+'px)';});
   });
 }
 function render(){
