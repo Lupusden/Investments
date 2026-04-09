@@ -133,6 +133,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .mkt-pill-chg.up{color:var(--green-text);}.mkt-pill-chg.dn{color:#ff3b30;}
 .mkt-pill-loading{font-size:9px;color:var(--text2);}
 .mkt-pill-sep{width:1px;height:32px;background:var(--border);margin:0 6px;flex-shrink:0;}
+.mkt-pill-futs{background:#f0f0f2;}
 .btn-add{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-pill);font-size:12px;font-weight:500;cursor:pointer;transition:filter .15s;font-family:inherit;letter-spacing:-.01em}
 .btn-add:hover{filter:brightness(.93)}
 .btn-sm{padding:4px 10px;font-size:11.5px}
@@ -1415,7 +1416,7 @@ var _mktDefs=[
 ];
 var _mktYfUrl='https://finance.yahoo.com/quote/';
 var _mktData=(function(){try{var s=localStorage.getItem('_mktData');return s?JSON.parse(s):null;}catch(e){return null;}})();
-function _mktPillHTML(def,r){
+function _mktPillHTML(def,r,extraClass){
   var up=r.chg>=0,cls=up?'up':'dn',arrow=up?'&#9650;':'&#9660;';
   var valStr,chgStr;
   var prev=r.price-r.chg;
@@ -1436,7 +1437,7 @@ function _mktPillHTML(def,r){
     chgStr=sign+Math.abs(pct).toFixed(1)+'%/'+sign+chgFmt;
   }
   var href=_mktYfUrl+encodeURIComponent(def.sym);
-  return '<a class="mkt-pill" href="'+href+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'
+  return '<a class="mkt-pill'+(extraClass?' '+extraClass:'')+'" href="'+href+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'
     +'<div class="mkt-pill-arrow '+cls+'">'+arrow+'</div>'
     +'<div class="mkt-pill-body"><div class="mkt-pill-name">'+esc(def.label)+'</div>'
     +'<div class="mkt-pill-val">'+valStr+'</div>'
@@ -1446,7 +1447,7 @@ function _mktPillHTML(def,r){
 function _mktPillsHTML(){
   if(!_mktData)return '<span class="mkt-pill-loading">Loading\u2026</span>';
   var futsHtml='';
-  _mktFutsDefs.forEach(function(def){var r=_mktData[def.sym];if(r)futsHtml+=_mktPillHTML(def,r);});
+  _mktFutsDefs.forEach(function(def){var r=_mktData[def.sym];if(r)futsHtml+=_mktPillHTML(def,r,'mkt-pill-futs');});
   var idxHtml='';
   _mktDefs.forEach(function(def){var r=_mktData[def.sym];if(r)idxHtml+=_mktPillHTML(def,r);});
   var html=futsHtml+(futsHtml&&idxHtml?'<div class="mkt-pill-sep"></div>':'')+idxHtml;
