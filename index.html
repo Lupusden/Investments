@@ -132,6 +132,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .mkt-pill-chg{font-size:9.5px;font-weight:500;line-height:1.3;white-space:nowrap;}
 .mkt-pill-chg.up{color:var(--green-text);}.mkt-pill-chg.dn{color:#ff3b30;}
 .mkt-pill-loading{font-size:9px;color:var(--text2);}
+.mkt-pill-sep{width:1px;height:32px;background:var(--border);margin:0 6px;flex-shrink:0;}
 .btn-add{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-pill);font-size:12px;font-weight:500;cursor:pointer;transition:filter .15s;font-family:inherit;letter-spacing:-.01em}
 .btn-add:hover{filter:brightness(.93)}
 .btn-sm{padding:4px 10px;font-size:11.5px}
@@ -1398,6 +1399,9 @@ function cashStatCard(accs){
 function sCard(label,val,sub,color){return '<div class="stat-card"><div class="stat-label">'+esc(label)+'</div><div class="stat-val-row"><div class="stat-value" style="color:'+color+'">'+val+'</div>'+(sub?'<div class="stat-sub" style="color:'+color+'">'+sub+'</div>':'')+'</div></div>';}
 
 // ---- MARKET INDICES ----
+var _mktFutsDefs=[
+  {sym:'ES=F',label:'ESM26',prefix:'',suffix:'',dec:2},
+];
 var _mktDefs=[
   {sym:'^GSPTSE',label:'S&P/TSX',prefix:'',suffix:'',dec:2},
   {sym:'^DJI',label:'DOW',prefix:'',suffix:'',dec:2},
@@ -1410,38 +1414,41 @@ var _mktDefs=[
 ];
 var _mktYfUrl='https://finance.yahoo.com/quote/';
 var _mktData=(function(){try{var s=localStorage.getItem('_mktData');return s?JSON.parse(s):null;}catch(e){return null;}})();
+function _mktPillHTML(def,r){
+  var up=r.chg>=0,cls=up?'up':'dn',arrow=up?'&#9650;':'&#9660;';
+  var valStr,chgStr;
+  var prev=r.price-r.chg;
+  var pct=prev!==0?(r.chg/prev*100):0;
+  var sign=r.chg>=0?'+':'-';
+  if(def.isFx){
+    var inv=(1/r.price)*100;
+    var prevInv=prev!==0?(1/prev)*100:inv;
+    var invChg=inv-prevInv;
+    var invSign=invChg>=0?'+':'-';
+    valStr=inv.toFixed(2)+'/'+r.price.toFixed(4);
+    chgStr=invSign+Math.abs(invChg).toFixed(2)+'/'+sign+Math.abs(r.chg).toFixed(4);
+  } else {
+    var fmt=function(v){return def.prefix+(v>=10000?v.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}):v.toFixed(def.dec))+def.suffix;};
+    var aChg=Math.abs(r.chg);
+    var chgFmt=def.prefix+(aChg<10?aChg.toFixed(def.dec):aChg.toFixed(2))+def.suffix;
+    valStr=fmt(r.price);
+    chgStr=sign+Math.abs(pct).toFixed(1)+'%/'+sign+chgFmt;
+  }
+  var href=_mktYfUrl+encodeURIComponent(def.sym);
+  return '<a class="mkt-pill" href="'+href+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'
+    +'<div class="mkt-pill-arrow '+cls+'">'+arrow+'</div>'
+    +'<div class="mkt-pill-body"><div class="mkt-pill-name">'+esc(def.label)+'</div>'
+    +'<div class="mkt-pill-val">'+valStr+'</div>'
+    +'<div class="mkt-pill-chg '+cls+'">'+chgStr+'</div>'
+    +'</div></a>';
+}
 function _mktPillsHTML(){
   if(!_mktData)return '<span class="mkt-pill-loading">Loading\u2026</span>';
-  var html='';
-  _mktDefs.forEach(function(def){
-    var r=_mktData[def.sym];if(!r)return;
-    var up=r.chg>=0,cls=up?'up':'dn',arrow=up?'&#9650;':'&#9660;';
-    var valStr,chgStr;
-    var prev=r.price-r.chg;
-    var pct=prev!==0?(r.chg/prev*100):0;
-    var sign=r.chg>=0?'+':'-';
-    if(def.isFx){
-      var inv=(1/r.price)*100;
-      var prevInv=prev!==0?(1/prev)*100:inv;
-      var invChg=inv-prevInv;
-      var invSign=invChg>=0?'+':'-';
-      valStr=inv.toFixed(2)+'/'+r.price.toFixed(4);
-      chgStr=invSign+Math.abs(invChg).toFixed(2)+'/'+sign+Math.abs(r.chg).toFixed(4);
-    } else {
-      var fmt=function(v){return def.prefix+(v>=10000?v.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}):v.toFixed(def.dec))+def.suffix;};
-      var aChg=Math.abs(r.chg);
-      var chgFmt=def.prefix+(aChg<10?aChg.toFixed(def.dec):aChg.toFixed(2))+def.suffix;
-      valStr=fmt(r.price);
-      chgStr=sign+Math.abs(pct).toFixed(1)+'%/'+sign+chgFmt;
-    }
-    var href=_mktYfUrl+encodeURIComponent(def.sym);
-    html+='<a class="mkt-pill" href="'+href+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'
-      +'<div class="mkt-pill-arrow '+cls+'">'+arrow+'</div>'
-      +'<div class="mkt-pill-body"><div class="mkt-pill-name">'+esc(def.label)+'</div>'
-      +'<div class="mkt-pill-val">'+valStr+'</div>'
-      +'<div class="mkt-pill-chg '+cls+'">'+chgStr+'</div>'
-      +'</div></a>';
-  });
+  var futsHtml='';
+  _mktFutsDefs.forEach(function(def){var r=_mktData[def.sym];if(r)futsHtml+=_mktPillHTML(def,r);});
+  var idxHtml='';
+  _mktDefs.forEach(function(def){var r=_mktData[def.sym];if(r)idxHtml+=_mktPillHTML(def,r);});
+  var html=futsHtml+(futsHtml&&idxHtml?'<div class="mkt-pill-sep"></div>':'')+idxHtml;
   return html||'<span class="mkt-pill-loading">—</span>';
 }
 function _fillMktPills(){
@@ -1459,7 +1466,7 @@ function _fillMktPills(){
 }
 function fetchMarketIndices(){
   var results={};
-  Promise.all(_mktDefs.map(function(def){
+  Promise.all(_mktFutsDefs.concat(_mktDefs).map(function(def){
     var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(def.sym)+'?interval=1m&range=1d&_t='+Date.now();
     return yahooFetch(url).then(function(data){
       var meta=data&&data.chart&&data.chart.result&&data.chart.result[0]&&data.chart.result[0].meta;
