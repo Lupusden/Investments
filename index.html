@@ -86,6 +86,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
   .nav-zoom-ctrl{display:none;}
   .nav-sync{display:none;}
   .bottom-row{grid-template-columns:1fr !important;}
+  .charts-col{order:2;}
+  .right-charts-col{order:1;}
   .hero{padding:8px 4px;}
   .holdings-header{padding:0 6px 4px;}
   .tbl-head,.holding-row,.total-row{padding:0 6px;}
@@ -157,7 +159,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .holdings-rows{}
 .tbl-head{display:grid;grid-template-columns:var(--cols);gap:0;padding:0 10px;background:var(--bg);border-bottom:1px solid var(--border);}
 .tbl-head.rollup{grid-template-columns:var(--rollup-cols)}
-.tbl-col{padding:3px 4px;font-size:10px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;white-space:nowrap;user-select:none;display:flex;align-items:center;gap:3px}
+.tbl-col{padding:3px 4px;font-size:10px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;white-space:nowrap;overflow:hidden;user-select:none;display:flex;align-items:center;gap:3px}
 .tbl-col:hover{color:var(--text)}
 .tbl-col.sorted{color:var(--blue)}
 .sort-arrow{font-size:8px;opacity:.6}
@@ -1374,7 +1376,9 @@ function heroHTML(catName,title){
 }
 function infoBanner(accs){return '<div class="info-banner"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor"/><path d="M7 5.5v3M7 4v.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/></svg> Showing data from: <strong>'+accs.map(function(a){return esc(a.name);}).join(', ')+'</strong></div>';}
 function ccyToggleHTML(){
-  return '<div class="ccy-toggle-wrap"><div class="ccy-toggle">'
+  return '<div class="ccy-toggle-wrap" style="display:flex;align-items:center;gap:8px;">'
+    +'<button class="nav-refresh-btn" onclick="doRefresh()" title="Refresh prices">↻</button>'
+    +'<div class="ccy-toggle">'
     +'<button class="ccy-btn'+(_portfolioCurrency==='USD'?' active':'')+'" onclick="setCurrency(\'USD\')">US$</button>'
     +'<button class="ccy-btn'+(_portfolioCurrency==='CAD'?' active':'')+'" onclick="setCurrency(\'CAD\')">CA$</button>'
     +'</div></div>';
@@ -1773,7 +1777,7 @@ function chartHTML(){
 
 function _initSingleDonut(canvasId,tooltipId,items,total,showValue){
   var canvas=document.getElementById(canvasId);if(!canvas)return;
-  var W=canvas.parentElement.clientWidth||280;var H=240;canvas.width=W;canvas.height=H;
+  var W=canvas.parentElement.clientWidth||280;var H=window.innerWidth<=768?180:240;canvas.width=W;canvas.height=H;
   var ctx=canvas.getContext('2d');
   var r=Math.round(H*0.34),ri=Math.round(r*0.62),cx=W/2,cy=Math.round(H*0.44);
   if(total===0){ctx.clearRect(0,0,W,H);ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle='var(--surface2)';ctx.fill();ctx.beginPath();ctx.arc(cx,cy,ri,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();return;}
