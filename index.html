@@ -141,7 +141,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .holdings-rows{}
 .tbl-head{display:grid;grid-template-columns:var(--cols);gap:0;padding:0 10px;background:var(--bg);border-bottom:1px solid var(--border);}
 .tbl-head.rollup{grid-template-columns:var(--rollup-cols)}
-.tbl-col{padding:3px 4px;font-size:10px;font-weight:600;color:#000;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;white-space:nowrap;user-select:none;display:flex;align-items:center;gap:3px}
+.tbl-col{padding:3px 4px;font-size:10px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;white-space:nowrap;user-select:none;display:flex;align-items:center;gap:3px}
 .tbl-col:hover{color:var(--text)}
 .tbl-col.sorted{color:var(--blue)}
 .sort-arrow{font-size:8px;opacity:.6}
@@ -1225,9 +1225,9 @@ function renderOverview(el){
   // cols: Account | Invested | Mkt Value | Cash | Total Value | Day% | Day P/L | Stock P/L | FX P/L | Dividends | Total P/L | Total P/L%
   var cols='minmax(160px,2fr) 90px 90px 80px 90px 58px 80px 90px 72px 72px 90px 72px';
   var hdrs=['Account','Book Value','Mkt Value','Cash','Total Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L%'];
-  var thStyle='font-size:9.5px;font-weight:600;color:#000;text-transform:uppercase;letter-spacing:.4px;padding:4px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border);';
+  var thStyle='font-size:9.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.4px;padding:4px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border);';
   // Add a subtle right border to separate the value group (Mkt Value / Cash / Total Value)
-  var thStyleTot='font-size:9.5px;font-weight:600;color:#000;text-transform:uppercase;letter-spacing:.4px;padding:4px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border);border-right:1px solid var(--border-light);';
+  var thStyleTot='font-size:9.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.4px;padding:4px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border);border-right:1px solid var(--border-light);';
   var thead='<div style="display:grid;grid-template-columns:'+cols+';background:var(--bg);padding:0 10px">'
     +hdrs.map(function(h,i){
       var st=i===4?thStyleTot:thStyle;
