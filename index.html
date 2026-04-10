@@ -167,8 +167,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .btn-add:hover{filter:brightness(.93)}
 .btn-sm{padding:4px 10px;font-size:11.5px}
 .holdings-scroll{overflow-x:auto;}
-.holdings-rows{min-width:max-content;}
-.tbl-head{display:grid;grid-template-columns:var(--cols);gap:0;padding:0 10px;background:var(--bg);border-bottom:1px solid var(--border);min-width:max-content;}
+.holdings-rows{}
+.tbl-head{display:grid;grid-template-columns:var(--cols);gap:0;padding:0 10px;background:var(--bg);border-bottom:1px solid var(--border);}
 .tbl-head.rollup{grid-template-columns:var(--rollup-cols)}
 .tbl-col{padding:3px 4px;font-size:10px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;white-space:nowrap;overflow:hidden;user-select:none;display:flex;align-items:center;gap:3px}
 .tbl-col:hover{color:var(--text)}
@@ -1187,12 +1187,22 @@ function autoSizeCols(card,isRollup){
   w.forEach(function(v,i){if(i!==nameIdx&&i!==arrowIdx)fixedTotal+=Math.max(v||MIN,MIN);});
   fixedTotal+=28;
   var scale=(!mobile&&availWidth>0&&(fixedTotal+nameMin)>availWidth)?Math.max(0.6,(availWidth-nameMin)/fixedTotal):1;
-  var tpl=w.map(function(v,i){
-    if(i===nameIdx)return'minmax('+nameMin+'px,1fr)';
-    if(i===arrowIdx)return'28px';
-    return Math.max(Math.round(Math.max(v||MIN,MIN)*scale),MIN)+'px';
-  }).join(' ');
+  // Compute explicit px widths for every column so header and rows get the same total width
+  var colWidths=w.map(function(v,i){
+    if(i===arrowIdx)return 28;
+    return Math.max(Math.round(Math.max(v||MIN,MIN)*scale),MIN);
+  });
+  // Name column: on desktop use 1fr (flexible), on mobile use a fixed width so both grid elements match
+  var nameW=Math.max(nameMin,Math.round(Math.max(availWidth-fixedTotal*scale,nameMin)));
+  colWidths[nameIdx]=nameW;
+  var tpl=colWidths.map(function(px){return px+'px';}).join(' ');
+  var totalW=colWidths.reduce(function(s,v){return s+v;},0);
   card.style.setProperty(isRollup?'--rollup-cols':'--cols',tpl);
+  // Explicitly set pixel width on header and rows so Safari aligns them perfectly
+  var head=card.querySelector('.tbl-head');
+  var rows=card.querySelector('.holdings-rows');
+  if(head)head.style.width=totalW+'px';
+  if(rows)rows.style.width=totalW+'px';
 }
 
 function _syncTblHeadScroll(){
