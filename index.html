@@ -1187,22 +1187,28 @@ function autoSizeCols(card,isRollup){
   w.forEach(function(v,i){if(i!==nameIdx&&i!==arrowIdx)fixedTotal+=Math.max(v||MIN,MIN);});
   fixedTotal+=28;
   var scale=(!mobile&&availWidth>0&&(fixedTotal+nameMin)>availWidth)?Math.max(0.6,(availWidth-nameMin)/fixedTotal):1;
-  // Compute explicit px widths for every column so header and rows get the same total width
   var colWidths=w.map(function(v,i){
     if(i===arrowIdx)return 28;
     return Math.max(Math.round(Math.max(v||MIN,MIN)*scale),MIN);
   });
-  // Name column: on desktop use 1fr (flexible), on mobile use a fixed width so both grid elements match
-  var nameW=Math.max(nameMin,Math.round(Math.max(availWidth-fixedTotal*scale,nameMin)));
-  colWidths[nameIdx]=nameW;
-  var tpl=colWidths.map(function(px){return px+'px';}).join(' ');
+  // On desktop let the name column flex; on mobile pin it to a fixed px so header+rows match exactly
+  if(mobile){
+    colWidths[nameIdx]=Math.max(nameMin,Math.round(Math.max(availWidth-fixedTotal*scale,nameMin)));
+  }
+  var tpl=colWidths.map(function(px,i){
+    return (i===nameIdx&&!mobile)?'minmax('+nameMin+'px,1fr)':px+'px';
+  }).join(' ');
   var totalW=colWidths.reduce(function(s,v){return s+v;},0);
-  card.style.setProperty(isRollup?'--rollup-cols':'--cols',tpl);
-  // Explicitly set pixel width on header and rows so Safari aligns them perfectly
-  var head=card.querySelector('.tbl-head');
-  var rows=card.querySelector('.holdings-rows');
-  if(head)head.style.width=totalW+'px';
-  if(rows)rows.style.width=totalW+'px';
+  var colVar=isRollup?'--rollup-cols':'--cols';
+  card.style.setProperty(colVar,tpl);
+  // Set the same explicit px width on every grid element (header + every row) so Safari can't drift
+  if(mobile){
+    var head=card.querySelector('.tbl-head');
+    if(head)head.style.width=totalW+'px';
+    card.querySelectorAll('.holding-row,.total-row,.tbl-head').forEach(function(el){
+      el.style.width=totalW+'px';
+    });
+  }
 }
 
 function _syncTblHeadScroll(){
