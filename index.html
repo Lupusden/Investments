@@ -1198,6 +1198,12 @@ function autoSizeCols(card,isRollup){
   colWidths[nameIdx]=Math.max(nameMin,Math.round(Math.max(availWidth-fixedTotal*scale,nameMin)));
   var tpl=colWidths.map(function(px){return px+'px';}).join(' ');
   card.style.setProperty(isRollup?'--rollup-cols':'--cols',tpl);
+  // Set gridTemplateColumns inline on every grid element — same approach as the Overview table.
+  // CSS variables resolve differently per element based on containing block width,
+  // causing misalignment. Inline styles are identical strings with no per-element resolution.
+  card.querySelectorAll('.tbl-head,.holding-row,.total-row').forEach(function(el){
+    el.style.gridTemplateColumns=tpl;
+  });
 }
 
 function _syncTblHeadScroll(){
