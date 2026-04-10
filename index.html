@@ -1253,7 +1253,7 @@ function renderSummary(el){
   var allH=accs.reduce(function(arr,a){return arr.concat(a.holdings.map(function(h){return Object.assign({},h,{accountName:a.name,accountId:a.id});}));},[]);
   var mergedH=mergeHoldingsBySymbol(allH);
   el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('','All Stocks'))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
-  var hc=el.querySelector('.holdings-card');if(hc)requestAnimationFrame(function(){autoSizeCols(hc,true);});
+  var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);
   bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
 
@@ -1379,7 +1379,7 @@ function renderCategory(el,catId){
   var allH=accs.reduce(function(arr,a){return arr.concat(a.holdings.map(function(h){return Object.assign({},h,{accountName:a.name,accountId:a.id});}));},[]);
   var mergedH=mergeHoldingsBySymbol(allH);
   el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('',esc(cat.name)))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
-  var hc=el.querySelector('.holdings-card');if(hc)requestAnimationFrame(function(){autoSizeCols(hc,true);});
+  var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);
   bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
 
@@ -1387,7 +1387,7 @@ function renderAccount(el,acc){
   var s=calcAccountStats(acc);var tpp=s.invCost>0?(s.totalPnL/s.invCost*100):0;var tsg=s.totalPnL-s.totalFxGain-s.totalDividends;
   var cat=getCategory(acc.categoryId);
   el.innerHTML=statsHTML(s.totalValue,s.totalCost,s.totalPnL,tpp,s.totalDailyPnL,s.totalFxGain,tsg,[acc],s.totalDividends)+holdingsHTML(acc.holdings,false,acc,null,heroHTML(cat?cat.name:'',esc(acc.name)))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(acc.holdings)+'</div></div>';
-  var hc=el.querySelector('.holdings-card');if(hc)requestAnimationFrame(function(){autoSizeCols(hc,false);});
+  var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,false);
   bindHoldingClicks(el,false,acc);initDonut(acc.holdings,getCashItems([acc]));initPortfolioChart(acc.holdings,_portRange);anim(el);_fillMktPills();
 }
 
