@@ -1206,16 +1206,6 @@ function autoSizeCols(card,isRollup){
   });
 }
 
-function _syncTblHeadScroll(){
-  // Sync .tbl-head with .holdings-scroll horizontal scroll
-  document.querySelectorAll('.holdings-card').forEach(function(card){
-    var head=card.querySelector('.tbl-head');
-    var scroll=card.querySelector('.holdings-scroll');
-    if(!head||!scroll||scroll._scrollBound)return;
-    scroll._scrollBound=true;
-    scroll.addEventListener('scroll',function(){head.style.transform='translateX(-'+scroll.scrollLeft+'px)';});
-  });
-}
 function render(){
   var content=document.getElementById('appContent');
   if(activeTab==='overview'){renderOverview(content);}
@@ -1223,7 +1213,6 @@ function render(){
   else if(activeTab==='admin'){renderAdminPage(content);}
   else if(typeof activeTab==='string'&&activeTab.indexOf('cat_')===0){renderCategory(content,activeTab.replace('cat_',''));}
   else{var acc=getAccount(activeTab);if(!acc){content.innerHTML='<div class="empty-state">Account not found.</div>';return;}renderAccount(content,acc);}
-  requestAnimationFrame(_syncTblHeadScroll);
 }
 
 function mergeHoldingsBySymbol(holdings){
