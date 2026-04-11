@@ -1177,15 +1177,16 @@ function autoSizeCols(card,isRollup){
   function tw(text,font){ctx.font=font;return Math.ceil(ctx.measureText(String(text||'')).width);}
   var w=[];
   function bump(i,px){if(!w[i]||w[i]<px)w[i]=px;}
-  // measure headers (9.5px bold uppercase + letter-spacing ~0.4px)
+  // measure headers — use larger font + generous pad to compensate for off-screen canvas
+  // using a generic fallback (canvas never added to DOM so SF Pro metrics aren't available)
   card.querySelectorAll('.tbl-col').forEach(function(el,i){
     var t=el.textContent.replace(/[▲▼]/g,'').trim();
-    bump(i,tw(t.toUpperCase(),'600 9.5px -apple-system,sans-serif')+t.length*0.6+PAD);
+    bump(i,Math.ceil(tw(t.toUpperCase(),'700 11px -apple-system,sans-serif')*1.15)+t.length+PAD+8);
   });
   // measure data cells (11px)
   card.querySelectorAll('.holding-row .cell,.total-row .cell').forEach(function(el){
     var row=el.parentElement;var i=Array.prototype.indexOf.call(row.children,el);
-    var t=el.textContent.trim();if(t)bump(i,tw(t,'11px -apple-system,sans-serif')+PAD);
+    var t=el.textContent.trim();if(t)bump(i,Math.ceil(tw(t,'11px -apple-system,sans-serif')*1.05)+PAD);
   });
   if(!w.length)return;
   var nameIdx=2,arrowIdx=w.length-1;
