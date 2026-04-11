@@ -95,7 +95,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
   .hero{padding:8px 4px;}
   .holdings-header{padding:0 6px 4px;}
   .tbl-head,.holding-row,.total-row{padding:0 6px;}
-  .stats-grid{grid-template-columns:repeat(3,1fr);}
+  .stats-grid{grid-template-columns:repeat(4,1fr);}
 }
 .bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;align-items:stretch}
 .charts-col{display:flex;flex-direction:column;gap:12px;min-width:0;overflow:hidden}
@@ -131,7 +131,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .nav-stats-bar{padding:4px 48px 5px;border-top:1px solid rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between;gap:12px;}
 @media(min-width:769px){.ccy-toggle-wrap{display:none !important;}}
 .nav-stats-bar:empty{display:none;}
-.stats-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;flex:1;margin-bottom:0}
+.stats-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;flex:1;margin-bottom:0}
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
 @media(orientation:landscape) and (max-width:1080px){
   .stats-grid{grid-template-columns:repeat(3,1fr);}
@@ -1260,9 +1260,9 @@ function renderOverview(el){
   allAccs.forEach(function(a){var s=calcAccountStats(a);gtv+=s.totalValue;gtc+=s.totalCost;gtic+=s.invCost;gtd+=s.totalDailyPnL;gtfx+=s.totalFxGain;gtdiv+=s.totalDividends;});
   var gtp=gtv-gtc+gtdiv,gtpp=gtic>0?(gtp/gtic*100):0,gtsg=gtp-gtfx-gtdiv;
 
-  // cols: Account | Invested | Mkt Value | Cash | Total Value | Day% | Day P/L | Stock P/L | FX P/L | Dividends | Total P/L | Total P/L%
-  var cols='minmax(160px,2fr) 90px 90px 80px 90px 58px 80px 90px 72px 72px 90px 72px';
-  var hdrs=['Account','Book Value','Mkt Value','Cash','Total Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L%'];
+  // cols: Account | Invested | Mkt Value | Cash | Total Value | Day% | Day P/L | Stock P/L | FX P/L | Total P/L | Total P/L%
+  var cols='minmax(160px,2fr) 90px 90px 80px 90px 58px 80px 90px 72px 90px 72px';
+  var hdrs=['Account','Book Value','Mkt Value','Cash','Total Value','Day%','Day P/L','Stock P/L','FX P/L','Total P/L','Total P/L%'];
   var thStyle='font-size:9.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.4px;padding:4px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border);';
   // Add a subtle right border to separate the value group (Mkt Value / Cash / Total Value)
   var thStyleTot='font-size:9.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.4px;padding:4px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border);border-right:1px solid var(--border-light);';
@@ -1306,9 +1306,8 @@ function renderOverview(el){
       +cell('<span class="'+cc(ctd)+'" style="font-weight:600">'+fmtC(ctd)+'</span>',6)
       +cell('<span class="'+cc(ctsg)+'" style="font-weight:600">'+fmtC(ctsg)+'</span>',7)
       +cell('<span class="'+cc(ctfx)+'" style="font-weight:600">'+fmtC(ctfx)+'</span>',8)
-      +cell('<span style="font-weight:600">'+fmtC(ctdiv)+'</span>',9)
-      +cell('<span class="'+cc(ctp)+'" style="font-weight:600">'+fmtC(ctp)+'</span>',10)
-      +cell('<span class="'+cc(ctpp)+'" style="font-weight:600">'+fmtPct(ctpp)+'</span>',11)
+      +cell('<span class="'+cc(ctp)+'" style="font-weight:600">'+fmtC(ctp)+'</span>',9)
+      +cell('<span class="'+cc(ctpp)+'" style="font-weight:600">'+fmtPct(ctpp)+'</span>',10)
       +'</div>';
     catAccs.forEach(function(a){
       var s=calcAccountStats(a);
@@ -1329,9 +1328,8 @@ function renderOverview(el){
         +cell(ccFmt(s.totalDailyPnL),6)
         +cell(ccFmt(tsg),7)
         +cell(ccFmt(s.totalFxGain),8)
-        +cell(fmtC(s.totalDividends),9)
-        +cell(ccFmt(tp),10)
-        +cell(pFmt(tpp),11)
+        +cell(ccFmt(tp),9)
+        +cell(pFmt(tpp),10)
         +'</div>';
     });
   });
@@ -1351,9 +1349,8 @@ function renderOverview(el){
     +cell('<span class="'+cc(gtd)+'" style="font-weight:700">'+fmtC(gtd)+'</span>',6)
     +cell('<span class="'+cc(gtsg2)+'" style="font-weight:700">'+fmtC(gtsg2)+'</span>',7)
     +cell('<span class="'+cc(gtfx)+'" style="font-weight:700">'+fmtC(gtfx)+'</span>',8)
-    +cell('<span style="font-weight:700">'+fmtC(gtdiv)+'</span>',9)
-    +cell('<span class="'+cc(gtp)+'" style="font-weight:700">'+fmtC(gtp)+'</span>',10)
-    +cell('<span class="'+cc(gtpp)+'" style="font-weight:700">'+fmtPct(gtpp)+'</span>',11)
+    +cell('<span class="'+cc(gtp)+'" style="font-weight:700">'+fmtC(gtp)+'</span>',9)
+    +cell('<span class="'+cc(gtpp)+'" style="font-weight:700">'+fmtPct(gtpp)+'</span>',10)
     +'</div>';
 
   var allH=allAccs.reduce(function(arr,a){return arr.concat(a.holdings.map(function(h){return Object.assign({},h,{accountName:a.name,accountId:a.id});}));},[]);
@@ -1419,7 +1416,6 @@ function statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv){
     sCard("Day's Change",fmtC(td),fmtPct(tdp),td>=0?'var(--green-text)':'var(--red-text)')+
     sCard('Stock Gain / Loss',fmtC(tsg||0),fmtPct(tsgp),(tsg||0)>=0?'var(--green-text)':'var(--red-text)')+
     sCard('FX Gain / Loss',fmtC(tfx||0),fmtPct(tfxp),(tfx||0)>=0?'var(--green-text)':'var(--red-text)')+
-    sCard('Dividends',fmtC(tdiv),fmtPct(tdivp),tdiv>=0?'var(--green-text)':'var(--text2)')+
     sCard('Total Gain / Loss',fmtC(tp),fmtPct(tpp),tp>=0?'var(--green-text)':'var(--red-text)')+
   '</div>';
   var sb=document.getElementById('statsBar');if(sb)sb.innerHTML=inner+ccyToggleHTML();
@@ -1535,7 +1531,7 @@ function fetchMarketIndices(){
 
 // ---- HOLDINGS TABLE ----
 function holdingsHTML(holdings,isRollup,acc,accsForCash,heroHtml){
-  var hdrs=isRollup?['Ticker','Web','Name','Account','Exchange','Amount','Cost Price','Book Value','Mkt Price','Mkt Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %','']:['Ticker','Web','Name','Exchange','Amount','Cost Price','Book Value','Mkt Price','Mkt Value','Day%','Day P/L','Stock P/L','FX P/L','Dividends','Total P/L','Total P/L %',''];
+  var hdrs=isRollup?['Ticker','Web','Name','Account','Exchange','Amount','Cost Price','Book Value','Mkt Price','Mkt Value','Day%','Day P/L','Stock P/L','FX P/L','Total P/L','Total P/L %','']:['Ticker','Web','Name','Exchange','Amount','Cost Price','Book Value','Mkt Price','Mkt Value','Day%','Day P/L','Stock P/L','FX P/L','Total P/L','Total P/L %',''];
   var sorted=holdings.slice();
   if(sortCol>=0&&sortCol<hdrs.length){sorted.sort(function(a,b){var va=gSV(a,sortCol,isRollup),vb=gSV(b,sortCol,isRollup);return(va<vb?-1:va>vb?1:0)*sortDir;});}
   var rc=isRollup?' rollup':'';
@@ -1565,7 +1561,6 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash,heroHtml){
     var hCcyR=h.currency||'USD';var hasFxR=(_portfolioCurrency==='USD'&&hCcyR==='CAD')||(_portfolioCurrency==='CAD'&&hCcyR==='USD');
     r+='<div class="cell '+cc(c.stockGain)+'">'+fmtC(c.stockGain)+'</div>';
     r+='<div class="cell '+(hasFxR&&c.fxGain!==0?cc(c.fxGain):'')+'">'+( hasFxR?fmtC(c.fxGain):'')+'</div>';
-    r+='<div class="cell '+(c.dividendTotal>0?cc(c.dividendTotal):'')+'">'+((c.dividendTotal||0)>0?fmtC(c.dividendTotal):'')+'</div>';
     var totPnLRow=c.netPnL+c.dividendTotal;var totPnLRowPct=c.totalCost>0?(totPnLRow/c.totalCost*100):0;
     r+='<div class="cell '+cc(totPnLRow)+'">'+fmtC(totPnLRow)+'</div>';
     r+='<div class="cell '+cc(totPnLRowPct)+'">'+fmtPct(totPnLRowPct)+'</div>';
@@ -1600,7 +1595,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash,heroHtml){
       +_bd+'<div class="cell">'+fmtC(_pvUsd)+'</div>'+_bd
       +'<div class="cell">'+fmtC(_pvUsd)+'</div>'
       +_bd+_bd+_bd+_bd
-      +_bd+_bd+_bd
+      +_bd+_bd
       +'<div class="cell cell-arrow'+(_eusd?' open':'')+'" id="cash_arrow_USD_'+a.id+'">&#9658;</div>'
       +'</div>'+cashEntriesPanel(a,'USD',_eusd)+'</div>';
     r+='<div class="holding-row-wrap">'
@@ -1614,7 +1609,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash,heroHtml){
       +_bd+'<div class="cell">'+fmtC(_pvCad)+'</div>'+_bd
       +'<div class="cell">'+fmtC(_pvCad)+'</div>'
       +_bd+_bd+_bd+_bd
-      +_bd+_bd+_bd
+      +_bd+_bd
       +'<div class="cell cell-arrow'+(_ecad?' open':'')+'" id="cash_arrow_CAD_'+a.id+'">&#9658;</div>'
       +'</div>'+cashEntriesPanel(a,'CAD',_ecad)+'</div>';
     return r;
@@ -1640,7 +1635,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash,heroHtml){
       +'<div class="cell">'+fmt(_aggUsd,0)+'</div>'
       +_bd+'<div class="cell">'+fmtC(_pvAggUsd)+'</div>'+_bd
       +'<div class="cell">'+fmtC(_pvAggUsd)+'</div>'
-      +_bd+_bd+_bd+_bd+_bd+_bd+_bd
+      +_bd+_bd+_bd+_bd+_bd+_bd
       +'<div class="cell cell-arrow"></div>'
       +'</div></div>';
     cashRR+='<div class="holding-row-wrap"><div class="holding-row rollup" style="'+_cs+'">'
@@ -1652,7 +1647,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash,heroHtml){
       +'<div class="cell">'+fmt(_aggCad,0)+'</div>'
       +_bd+'<div class="cell">'+fmtC(_pvAggCad)+'</div>'+_bd
       +'<div class="cell">'+fmtC(_pvAggCad)+'</div>'
-      +_bd+_bd+_bd+_bd+_bd+_bd+_bd
+      +_bd+_bd+_bd+_bd+_bd+_bd
       +'<div class="cell cell-arrow"></div>'
       +'</div></div>';
   }
@@ -1672,7 +1667,6 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash,heroHtml){
     '<div class="cell '+cc(invDPnL)+'" style="color:'+(invDPnL>=0?'var(--green-text)':'var(--red-text)')+'">'+fmtC(invDPnL)+'</div>'+
     '<div class="cell '+cc(invStockGain)+'" style="color:'+(invStockGain>=0?'var(--green-text)':'var(--red-text)')+'">'+fmtC(invStockGain)+'</div>'+
     '<div class="cell '+cc(invFxGain)+'" style="color:'+(invFxGain>=0?'var(--green-text)':'var(--red-text)')+'">'+fmtC(invFxGain)+'</div>'+
-    '<div class="cell '+cc(totDividends)+'" style="color:'+(totDividends>=0?'var(--green-text)':'var(--red-text)')+'">'+fmtC(totDividends)+'</div>'+
     '<div class="cell '+cc(invTotPnL)+'" style="color:'+(invTotPnL>=0?'var(--green-text)':'var(--red-text)')+'">'+fmtC(invTotPnL)+'</div>'+
     '<div class="cell '+cc(invTotPnLPct)+'" style="color:'+(invTotPnLPct>=0?'var(--green-text)':'var(--red-text)')+'">'+fmtPct(invTotPnLPct)+'</div>'+b+
     '</div>';
@@ -1685,7 +1679,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash,heroHtml){
     b+(isRollup?b:'')+b+b+b+
     '<div class="cell">'+fmtC(totTC)+'</div>'+b+
     '<div class="cell">'+fmtC(totMV)+'</div>'+
-    _bd+_bd+_bd+_bd+_bd+_bd+_bd+b+
+    _bd+_bd+_bd+_bd+_bd+_bd+b+
     '</div>':'';
 
   var aid=acc?acc.id:0;
@@ -1695,7 +1689,7 @@ function holdingsHTML(holdings,isRollup,acc,accsForCash,heroHtml){
 function gSV(h,col,isRollup){
   var c=calcHolding(h);
   var cp=h.currentPrice*getFxFactor(h);
-  var cols=isRollup?[h.symbol,0,h.name,h.accountName||'',h.exchange||'',c.totalShares,c.avgPrice,c.totalCost,cp,c.marketValue,c.dailyPnLPct,c.dailyPnL,c.stockGain,c.fxGain,c.dividendTotal,c.netPnL+c.dividendTotal,c.netPnLPct,0]:[h.symbol,0,h.name,h.exchange||'',c.totalShares,c.avgPrice,c.totalCost,cp,c.marketValue,c.dailyPnLPct,c.dailyPnL,c.stockGain,c.fxGain,c.dividendTotal,c.netPnL+c.dividendTotal,c.netPnLPct,0];
+  var cols=isRollup?[h.symbol,0,h.name,h.accountName||'',h.exchange||'',c.totalShares,c.avgPrice,c.totalCost,cp,c.marketValue,c.dailyPnLPct,c.dailyPnL,c.stockGain,c.fxGain,c.netPnL+c.dividendTotal,c.netPnLPct,0]:[h.symbol,0,h.name,h.exchange||'',c.totalShares,c.avgPrice,c.totalCost,cp,c.marketValue,c.dailyPnLPct,c.dailyPnL,c.stockGain,c.fxGain,c.netPnL+c.dividendTotal,c.netPnLPct,0];
   return cols[col]!==undefined?cols[col]:0;
 }
 
