@@ -1396,8 +1396,10 @@ function heroHTML(catName,title){
 }
 function infoBanner(accs){return '<div class="info-banner"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="currentColor"/><path d="M7 5.5v3M7 4v.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/></svg> Showing data from: <strong>'+accs.map(function(a){return esc(a.name);}).join(', ')+'</strong></div>';}
 function ccyToggleHTML(){
+  var t=_lastSync?fmtSyncTime(_lastSync):'';
   return '<div class="ccy-toggle-wrap" style="display:flex;align-items:center;gap:8px;">'
     +'<button class="nav-refresh-btn" onclick="doRefresh()" title="Refresh prices">↻</button>'
+    +'<span class="nav-sync-time" id="syncTimeMobile">'+t+'</span>'
     +'<div class="ccy-toggle">'
     +'<button class="ccy-btn'+(_portfolioCurrency==='USD'?' active':'')+'" onclick="setCurrency(\'USD\')">US$</button>'
     +'<button class="ccy-btn'+(_portfolioCurrency==='CAD'?' active':'')+'" onclick="setCurrency(\'CAD\')">CA$</button>'
@@ -1415,8 +1417,10 @@ function statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv){
     +'<button class="ccy-btn'+(_portfolioCurrency==='USD'?' active':'')+'" onclick="setCurrency(\'USD\')">US$</button>'
     +'<button class="ccy-btn'+(_portfolioCurrency==='CAD'?' active':'')+'" onclick="setCurrency(\'CAD\')">CA$</button>'
     +'</div>';
+  var t=_lastSync?fmtSyncTime(_lastSync):'';
   var ccyPill='<div class="stat-card stat-ccy-pill">'
     +'<button class="nav-refresh-btn" onclick="doRefresh()" title="Refresh prices">↻</button>'
+    +'<span class="nav-sync-time" id="syncTimeLandscape">'+t+'</span>'
     +ccyBtns+'</div>';
   var inner='<div class="stats-grid">'+
     sCard('Total Mkt Value',fmtC(tv),'','var(--text)')+
@@ -3875,10 +3879,10 @@ function anim(container){
 // ---- REFRESH ----
 var _lastSync=null;
 function fmtSyncTime(d){var h=d.getHours().toString().padStart(2,'0');var m=d.getMinutes().toString().padStart(2,'0');return h+':'+m;}
-function updateSyncDisplay(){var el=document.getElementById('syncTime');if(el&&_lastSync)el.textContent=fmtSyncTime(_lastSync);}
+function _setSyncAll(t){['syncTime','syncTimeMobile','syncTimeLandscape'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=t;});}
+function updateSyncDisplay(){if(_lastSync)_setSyncAll(fmtSyncTime(_lastSync));}
 function setPriceFetchStatus(msg){
-  var el=document.getElementById('syncTime');
-  if(el)el.textContent=msg||(_lastSync?fmtSyncTime(_lastSync):'');
+  _setSyncAll(msg||(_lastSync?fmtSyncTime(_lastSync):''));
 }
 async function fetchAllPrices(){
   var symMap={};
