@@ -135,6 +135,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
 @media(orientation:landscape) and (max-width:1080px){
   .stats-grid{grid-template-columns:repeat(3,1fr);}
+  .stat-ccy-pill{display:flex;}
   .nav-stats-bar{padding:4px 10px 5px;flex-wrap:wrap;gap:6px;}
   .nav-row-bottom{padding:2px 10px 4px;display:flex;align-items:center;gap:6px;}
   .nav-sync{display:none;}
@@ -146,6 +147,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
   .wrapper{padding:6px 10px 20px;}
 }
 .stat-card{background:var(--card);border-radius:var(--radius-sm);padding:3px 8px;box-shadow:var(--shadow-sm);border:1px solid var(--border-light)}
+.stat-ccy-pill{display:none;align-items:center;justify-content:center;gap:8px;}
 .stat-label{font-size:9px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px}
 .stat-value{font-size:11px;font-weight:700;letter-spacing:-0.2px}
 .stat-val-row{display:flex;align-items:baseline;justify-content:space-between;gap:4px}
@@ -1408,6 +1410,13 @@ function statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv){
   var tdivp=tc>0?tdiv/tc*100:0;
   var cashVal=accs?(Array.isArray(accs)?accs:[accs]).reduce(function(s,a){return s+getCashPortValue(a);},0):0;
   var invMV=tv-cashVal;
+  var ccyBtns='<div class="ccy-toggle">'
+    +'<button class="ccy-btn'+(_portfolioCurrency==='USD'?' active':'')+'" onclick="setCurrency(\'USD\')">US$</button>'
+    +'<button class="ccy-btn'+(_portfolioCurrency==='CAD'?' active':'')+'" onclick="setCurrency(\'CAD\')">CA$</button>'
+    +'</div>';
+  var ccyPill='<div class="stat-card stat-ccy-pill">'
+    +'<button class="nav-refresh-btn" onclick="doRefresh()" title="Refresh prices">↻</button>'
+    +ccyBtns+'</div>';
   var inner='<div class="stats-grid">'+
     sCard('Total Mkt Value',fmtC(tv),'','var(--text)')+
     sCard('Stock Mkt Value',fmtC(invMV),'','var(--text)')+
@@ -1417,12 +1426,9 @@ function statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv){
     sCard('Stock Gain / Loss',fmtC(tsg||0),fmtPct(tsgp),(tsg||0)>=0?'var(--green-text)':'var(--red-text)')+
     sCard('FX Gain / Loss',fmtC(tfx||0),fmtPct(tfxp),(tfx||0)>=0?'var(--green-text)':'var(--red-text)')+
     sCard('Total Gain / Loss',fmtC(tp),fmtPct(tpp),tp>=0?'var(--green-text)':'var(--red-text)')+
+    ccyPill+
   '</div>';
   var sb=document.getElementById('statsBar');if(sb)sb.innerHTML=inner+ccyToggleHTML();
-  var ccyBtns='<div class="ccy-toggle">'
-    +'<button class="ccy-btn'+(_portfolioCurrency==='USD'?' active':'')+'" onclick="setCurrency(\'USD\')">US$</button>'
-    +'<button class="ccy-btn'+(_portfolioCurrency==='CAD'?' active':'')+'" onclick="setCurrency(\'CAD\')">CA$</button>'
-    +'</div>';
   var nd=document.getElementById('navCcyDesktop');if(nd)nd.innerHTML=ccyBtns;
   return '';
 }
@@ -3867,7 +3873,7 @@ function anim(container){
 
 // ---- REFRESH ----
 var _lastSync=null;
-function fmtSyncTime(d){var h=d.getHours().toString().padStart(2,'0');var m=d.getMinutes().toString().padStart(2,'0');return d.getDate()+_PMONS[d.getMonth()]+"'"+String(d.getFullYear()).slice(2)+' '+h+':'+m;}
+function fmtSyncTime(d){var h=d.getHours().toString().padStart(2,'0');var m=d.getMinutes().toString().padStart(2,'0');return h+':'+m;}
 function updateSyncDisplay(){var el=document.getElementById('syncTime');if(el&&_lastSync)el.textContent=fmtSyncTime(_lastSync);}
 function setPriceFetchStatus(msg){
   var el=document.getElementById('syncTime');
