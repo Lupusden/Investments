@@ -1257,6 +1257,19 @@ function renderSummary(el){
   bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
 
+function autoSizeOverviewCols(card){
+  // Fixed column widths (px) for all non-name columns — must match cols definition in renderOverview
+  var FIXED_COLS=[90,90,80,90,58,80,90,72,90,72];
+  var fixedTotal=FIXED_COLS.reduce(function(s,v){return s+v;},0); // 812
+  var nameW=Math.max(160,card.clientWidth-20-fixedTotal);
+  var tpl=nameW+'px '+FIXED_COLS.join('px ')+'px';
+  // Apply identical inline string to every row — same fix as autoSizeCols for account tabs.
+  // fr/minmax units resolve per-element on iOS Safari; fixed px strings are always identical.
+  card.querySelectorAll('.ov-grid-row').forEach(function(row){
+    row.style.gridTemplateColumns=tpl;
+  });
+}
+
 function renderOverview(el){
   var allAccs=appData.tabOrder.map(getAccount).filter(Boolean);
   var gtv=0,gtc=0,gtic=0,gtd=0,gtfx=0,gtdiv=0;
@@ -1269,7 +1282,7 @@ function renderOverview(el){
   var thStyle='font-size:9.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.4px;padding:4px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border);';
   // Add a subtle right border to separate the value group (Mkt Value / Cash / Total Value)
   var thStyleTot='font-size:9.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.4px;padding:4px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border);border-right:1px solid var(--border-light);';
-  var thead='<div style="display:grid;grid-template-columns:'+cols+';background:var(--bg);padding:0 10px">'
+  var thead='<div class="ov-grid-row" style="display:grid;grid-template-columns:'+cols+';background:var(--bg);padding:0 10px">'
     +hdrs.map(function(h,i){
       var st=i===4?thStyleTot:thStyle;
       return'<div style="'+st+(i===0?'text-align:left':'')+'">'+h+'</div>';
@@ -1296,7 +1309,7 @@ function renderOverview(el){
     var ctInvested=ctc-ctCash;
     var ctMktVal=ctv-ctCash;
     var ctsg=ctp-ctfx-ctdiv;
-    rows+='<div style="display:grid;grid-template-columns:'+cols+';background:rgba(0,113,227,0.05);border-top:2px solid var(--border);border-bottom:1px solid var(--border-light);padding:0 10px;cursor:pointer;position:relative" onclick="switchTab(\'cat_'+catId+'\')">'
+    rows+='<div class="ov-grid-row" style="display:grid;grid-template-columns:'+cols+';background:rgba(0,113,227,0.05);border-top:2px solid var(--border);border-bottom:1px solid var(--border-light);padding:0 10px;cursor:pointer;position:relative" onclick="switchTab(\'cat_'+catId+'\')">'
       +cell('<div style="display:flex;align-items:center;gap:7px">'
         +'<span style="font-size:11.5px;font-weight:700;color:var(--blue)">'+esc(cat.name)+'</span>'
         +'<span style="font-size:10px;color:var(--text2);font-weight:400">'+catAccs.length+' account'+(catAccs.length!==1?'s':'')+'</span>'
@@ -1321,7 +1334,7 @@ function renderOverview(el){
       var tsg=tp-s.totalFxGain-s.totalDividends;
       var tdp=s.totalValue>0?s.totalDailyPnL/s.totalValue*100:0;
       var investedOnly=s.totalCost-aCash;
-      rows+='<div style="display:grid;grid-template-columns:'+cols+';padding:0 10px;min-height:28px;align-items:center;cursor:pointer;border-bottom:1px solid var(--border-light);transition:background .12s" class="ov-acc-row" onclick="switchTab('+a.id+')">'
+      rows+='<div style="display:grid;grid-template-columns:'+cols+';padding:0 10px;min-height:28px;align-items:center;cursor:pointer;border-bottom:1px solid var(--border-light);transition:background .12s" class="ov-acc-row ov-grid-row" onclick="switchTab('+a.id+')">'
         +cell('<span style="font-size:11px;color:var(--text);padding-left:20px">'+esc(a.name)+'</span>',0)
         +cell(fmtC(investedOnly),1)
         +cell(fmtC(aMktVal),2)
@@ -1342,7 +1355,7 @@ function renderOverview(el){
   var gtCash=allAccs.reduce(function(s,a){return s+getCashPortValue(a);},0);
   var gtInvested=gtc-gtCash;
   var gtMktVal=gtv-gtCash;
-  var totalRow='<div style="display:grid;grid-template-columns:'+cols+';border-top:2px solid var(--border);padding:0 10px;min-height:30px;align-items:center;background:var(--bg)">'
+  var totalRow='<div class="ov-grid-row" style="display:grid;grid-template-columns:'+cols+';border-top:2px solid var(--border);padding:0 10px;min-height:30px;align-items:center;background:var(--bg)">'
     +cell('<span style="font-size:11.5px;font-weight:700;color:var(--text)">Total</span>',0)
     +cell('<span style="font-weight:700">'+fmtC(gtInvested)+'</span>',1)
     +cell('<span style="font-weight:700">'+fmtC(gtMktVal)+'</span>',2)
@@ -1365,6 +1378,7 @@ function renderOverview(el){
     '</div>';
 
   el.innerHTML=statsHTML(gtv,gtc,gtp,gtpp,gtd,gtfx,gtsg,allAccs,gtdiv)+table+botRow;
+  var ovCard=el.querySelector('.holdings-card');if(ovCard)autoSizeOverviewCols(ovCard);
   bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(allAccs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
 
