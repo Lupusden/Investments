@@ -1361,7 +1361,7 @@ function renderOverview(el){
   var botRow='<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
   var table='<div class="holdings-card" style="margin-bottom:16px">'+
     '<div class="sticky-table-head">'+heroHTML('','Overview')+'<div class="holdings-header"><span class="holdings-title">Portfolio Overview</span></div>'+
-    thead+'</div><div class="holdings-scroll">'+rows+totalRow+'</div>'+
+    '</div><div class="holdings-scroll">'+thead+rows+totalRow+'</div>'+
     '</div>';
 
   el.innerHTML=statsHTML(gtv,gtc,gtp,gtpp,gtd,gtfx,gtsg,allAccs,gtdiv)+table+botRow;
