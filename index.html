@@ -3882,13 +3882,7 @@ function showConfirmDelete(msg,cb){
 document.querySelectorAll('.modal-overlay').forEach(function(ov){ov.addEventListener('click',function(e){if(e.target===ov)ov.classList.remove('open');});});
 
 // ---- ANIMATION ----
-function anim(container){
-  var els=container.querySelectorAll('.stat-card,.holdings-card,.chart-card,.perf-card,.ret-card,.trades-group');
-  els.forEach(function(el,i){
-    el.style.opacity='0';el.style.transform='translateY(12px)';
-    setTimeout(function(){el.style.transition='opacity .3s ease, transform .3s ease';el.style.opacity='1';el.style.transform='translateY(0)';},i*35);
-  });
-}
+function anim(container){}
 
 // ---- REFRESH ----
 var _lastSync=null;
