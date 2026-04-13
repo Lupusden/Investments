@@ -224,6 +224,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .chart-title{font-size:13px;font-weight:700;margin-bottom:10px}
 .donut-wrap{position:relative;display:flex;justify-content:center;align-items:center;margin-bottom:14px;overflow:visible}
 #donutCanvas{max-width:100%;}
+.donut-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+@media(max-width:768px){.donut-grid{grid-template-columns:1fr;gap:12px;}}
 .donut-tooltip{position:absolute;background:rgba(29,29,31,0.92);color:#fff;font-size:12px;padding:6px 10px;border-radius:8px;pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .15s;z-index:10;top:0;left:0}
 .chart-legend{display:flex;flex-direction:column;gap:6px}
 .legend-item{display:flex;align-items:center;gap:8px;font-size:13px}
@@ -1253,8 +1255,8 @@ function renderSummary(el){
   var allH=accs.reduce(function(arr,a){return arr.concat(a.holdings.map(function(h){return Object.assign({},h,{accountName:a.name,accountId:a.id});}));},[]);
   var mergedH=mergeHoldingsBySymbol(allH);
   el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('','All Stocks'))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
-  requestAnimationFrame(function(){var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);});
-  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
+  requestAnimationFrame(function(){var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);initDonut(mergedH,getCashItems(accs));});
+  bindHoldingClicks(el,true);initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
 
 function autoSizeOverviewCols(card){
@@ -1378,8 +1380,8 @@ function renderOverview(el){
     '</div>';
 
   el.innerHTML=statsHTML(gtv,gtc,gtp,gtpp,gtd,gtfx,gtsg,allAccs,gtdiv)+table+botRow;
-  requestAnimationFrame(function(){var ovCard=el.querySelector('.holdings-card');if(ovCard)autoSizeOverviewCols(ovCard);});
-  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(allAccs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
+  requestAnimationFrame(function(){var ovCard=el.querySelector('.holdings-card');if(ovCard)autoSizeOverviewCols(ovCard);initDonut(mergedH,getCashItems(allAccs));});
+  bindHoldingClicks(el,true);initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
 
 function renderCategory(el,catId){
@@ -1390,16 +1392,16 @@ function renderCategory(el,catId){
   var allH=accs.reduce(function(arr,a){return arr.concat(a.holdings.map(function(h){return Object.assign({},h,{accountName:a.name,accountId:a.id});}));},[]);
   var mergedH=mergeHoldingsBySymbol(allH);
   el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('',esc(cat.name)))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
-  requestAnimationFrame(function(){var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);});
-  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
+  requestAnimationFrame(function(){var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);initDonut(mergedH,getCashItems(accs));});
+  bindHoldingClicks(el,true);initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
 
 function renderAccount(el,acc){
   var s=calcAccountStats(acc);var tpp=s.invCost>0?(s.totalPnL/s.invCost*100):0;var tsg=s.totalPnL-s.totalFxGain-s.totalDividends;
   var cat=getCategory(acc.categoryId);
   el.innerHTML=statsHTML(s.totalValue,s.totalCost,s.totalPnL,tpp,s.totalDailyPnL,s.totalFxGain,tsg,[acc],s.totalDividends)+holdingsHTML(acc.holdings,false,acc,null,heroHTML(cat?cat.name:'',esc(acc.name)))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(acc.holdings)+'</div></div>';
-  requestAnimationFrame(function(){var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,false);});
-  bindHoldingClicks(el,false,acc);initDonut(acc.holdings,getCashItems([acc]));initPortfolioChart(acc.holdings,_portRange);anim(el);_fillMktPills();
+  requestAnimationFrame(function(){var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,false);initDonut(acc.holdings,getCashItems([acc]));});
+  bindHoldingClicks(el,false,acc);initPortfolioChart(acc.holdings,_portRange);anim(el);_fillMktPills();
 }
 
 function heroHTML(catName,title){
@@ -1811,7 +1813,7 @@ function sortBy(col,isRollup){if(sortCol===col)sortDir*=-1;else{sortCol=col;sort
 // ---- DONUT CHART ----
 function chartHTML(){
   return '<div class="chart-card"><div class="chart-title">Market Value by Stock</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">'
+    +'<div class="donut-grid">'
     +'<div><div style="font-size:9.5px;font-weight:500;color:var(--text2);text-align:center;margin-bottom:3px">Value ($\'000)</div>'
     +'<div class="donut-wrap" style="margin-bottom:0"><canvas id="donutCanvasVal"></canvas><div class="donut-tooltip" id="donutTooltipVal"></div></div></div>'
     +'<div><div style="font-size:9.5px;font-weight:500;color:var(--text2);text-align:center;margin-bottom:3px">Market Value by Stock (%)</div>'
