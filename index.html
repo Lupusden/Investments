@@ -76,6 +76,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .main-grid{display:grid;grid-template-columns:1fr 330px;gap:12px;align-items:start}
 .main-grid>*{min-width:0}
 @media(max-width:1100px){.main-grid{grid-template-columns:1fr}}
+@media(max-width:900px){
+  .bottom-row{display:flex !important;flex-direction:column;gap:12px;}
+  .charts-col,.right-charts-col{display:contents;}
+  .profit-chart-card{order:1;}
+  .chart-card{order:2;}
+  .port-chart-card{order:3;}
+  .perf-card{order:4;}
+}
 @media(max-width:768px){
   .wrapper{padding:6px 10px 20px;}
   .nav-row-top{padding:0 10px;height:36px;}
@@ -86,12 +94,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
   .mkt-pills-nav-bar{padding:5px 10px 6px;}
   .nav-zoom-ctrl{display:none;}
   .nav-sync{display:none;}
-  .bottom-row{display:flex !important;flex-direction:column;gap:12px;}
-  .charts-col,.right-charts-col{display:contents;}
-  .profit-chart-card{order:1;}
-  .chart-card{order:2;}
-  .port-chart-card{order:3;}
-  .perf-card{order:4;}
   .hero{padding:8px 4px;}
   .holdings-header{padding:0 6px 4px;}
   .tbl-head,.holding-row,.total-row{padding:0 6px;}
@@ -225,7 +227,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .donut-wrap{position:relative;display:flex;justify-content:center;align-items:center;margin-bottom:14px;overflow:visible}
 #donutCanvas{max-width:100%;}
 .donut-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
-@media(max-width:768px){.donut-grid{grid-template-columns:1fr;gap:12px;}}
+@media(max-width:900px){.donut-grid{grid-template-columns:1fr;gap:12px;}}
 .donut-tooltip{position:absolute;background:rgba(29,29,31,0.92);color:#fff;font-size:12px;padding:6px 10px;border-radius:8px;pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .15s;z-index:10;top:0;left:0}
 .chart-legend{display:flex;flex-direction:column;gap:6px}
 .legend-item{display:flex;align-items:center;gap:8px;font-size:13px}
