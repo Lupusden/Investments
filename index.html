@@ -2619,10 +2619,11 @@ function _moverRow(name,sym,val,maxAbs,isDollar,isWin){
   var sign=val>=0?'+':'-';
   var valStr=isDollar?sign+fmtC(Math.abs(val)):sign+fmt(Math.abs(val),1)+'%';
   var shortName=name.length>26?name.slice(0,25)+'\u2026':name;
-  return'<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px;margin-bottom:2px;border-radius:6px;background:linear-gradient(to right,rgba('+fillRgb+',.09) '+barPct.toFixed(1)+'%,transparent '+barPct.toFixed(1)+'%)" title="'+esc(name)+' ('+esc(sym)+')">'
+  var yhUrl='https://finance.yahoo.com/quote/'+encodeURIComponent(sym);
+  return'<a href="'+yhUrl+'" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px;margin-bottom:2px;border-radius:6px;background:linear-gradient(to right,rgba('+fillRgb+',.09) '+barPct.toFixed(1)+'%,transparent '+barPct.toFixed(1)+'%);text-decoration:none;cursor:pointer" title="'+esc(name)+' ('+esc(sym)+')">'
     +'<div style="font-size:11px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">'+esc(shortName)+'</div>'
     +'<div style="font-size:11px;font-weight:700;color:'+color+';white-space:nowrap;flex-shrink:0;padding-left:10px">'+valStr+'</div>'
-    +'</div>';
+    +'</a>';
 }
 
 function _buildMoversInner(holdings,mode,valMode){
