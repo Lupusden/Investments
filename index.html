@@ -2127,7 +2127,8 @@ async function initPortfolioChart(holdings,selRange){
           _portOverlays.push({label:o.label,color:o.color,pts:_portOverlayCache[ck]});
         if(++done===pending&&cb)cb();return;
       }
-      var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(o.sym)+'?interval='+cfg.interval+'&range='+cfg.range;
+      var ovRange=cfg.range==='5d'?'1mo':cfg.range; // 5d can return null result; 1mo is reliable
+      var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(o.sym)+'?interval=1d&range='+ovRange;
       portFetch(url).then(function(data){
         var r=data&&data.chart&&data.chart.result&&data.chart.result[0];
         if(r){var ts=r.timestamp||[],cl=(r.indicators&&r.indicators.quote&&r.indicators.quote[0]&&r.indicators.quote[0].close)||[],pts=[];
