@@ -2265,6 +2265,9 @@ async function initPortfolioChart(holdings,selRange){
     var price=h.currentPrice||0;
     if(!price)return;
     var earliest=(h.lots||[]).map(function(l){return l.date||todayStr;}).sort()[0]||todayStr;
+    var days=_rangeDays[selRange];
+    var cutoff=days?new Date(Date.now()-days*86400000).toISOString().slice(0,10):null;
+    if(cutoff&&earliest<cutoff)earliest=cutoff; // cap to range start so pre-range lot dates don't add outlier ticks
     holdingSeries.push({pts:[{date:earliest,price:price},{date:todayStr,price:price}],h:h,fx:fx});
   });
 
