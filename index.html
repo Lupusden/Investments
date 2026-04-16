@@ -2205,8 +2205,10 @@ async function initPortfolioChart(holdings,selRange){
 
   function buildChartData(){
     if(!holdingSeries.length)return null;
+    var _bcd_days=_rangeDays[selRange];
+    var _bcd_cutoff=_bcd_days?new Date(Date.now()-_bcd_days*86400000).toISOString().slice(0,10):null;
     var allDates={};
-    holdingSeries.forEach(function(hs){hs.pts.forEach(function(p){allDates[p.date]=true;});});
+    holdingSeries.forEach(function(hs){hs.pts.forEach(function(p){if(!_bcd_cutoff||p.date>=_bcd_cutoff)allDates[p.date]=true;});});
     var sortedDates=Object.keys(allDates).sort();
     if(sortedDates.length<2)return null;
 
@@ -2297,6 +2299,9 @@ async function initPortfolioChart(holdings,selRange){
     if(fetchedSyms[h.symbol]||!h.currentPrice)return;
     var fx=_chartFx(h);
     var earliest=(h.lots||[]).map(function(l){return l.date||todayStr;}).sort()[0]||todayStr;
+    var _fb_days=_rangeDays[selRange];
+    var _fb_cutoff=_fb_days?new Date(Date.now()-_fb_days*86400000).toISOString().slice(0,10):null;
+    if(_fb_cutoff&&earliest<_fb_cutoff)earliest=_fb_cutoff;
     holdingSeries.push({pts:[{date:earliest,price:h.currentPrice}],h:h,fx:fx});
   });
   var finalData=buildChartData();
