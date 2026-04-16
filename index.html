@@ -1905,6 +1905,7 @@ function initDonut(holdings,cashItems){
 
 // ---- PORTFOLIO HISTORY CHART ----
 var _portRange='1Y';
+var _portChartToken=0; // incremented on each initPortfolioChart call; stale completions bail out
 var _portCache={};
 var _portHoldings=[];
 var _portHoldingSeries=[];
@@ -2055,6 +2056,7 @@ function _lotCostBasis(lot,h){
 }
 
 async function initPortfolioChart(holdings,selRange){
+  var _myToken=++_portChartToken; // any async path that completes must check this before rendering
   // Merge same-symbol holdings (e.g. same stock across multiple accounts) so chart and breakdown don't double-count
   var _mergeMap={};var _merged=[];
   holdings.forEach(function(h){
@@ -2105,6 +2107,7 @@ async function initPortfolioChart(holdings,selRange){
     return{dates:dates,portValues:pvs,profValues:prfs};
   }
   function renderCharts(data){
+    if(_myToken!==_portChartToken)return; // stale: a newer range was selected, don't overwrite
     var d=addTodayPoint(data);
     if(msg)msg.style.display='none';canvas.style.display='block';
     _drawPortChart(canvas,'portChartTooltip',{dates:d.dates,values:d.portValues},selRange,_portOverlays);
