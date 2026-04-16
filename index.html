@@ -103,6 +103,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .charts-col{display:flex;flex-direction:column;gap:12px;min-width:0;overflow:hidden}
 .port-chart-card{background:var(--card);border-radius:var(--radius);padding:14px 18px 12px;box-shadow:var(--shadow);border:1px solid var(--border-light)}
 .profit-chart-card{background:var(--card);border-radius:var(--radius);padding:14px 18px 12px;box-shadow:var(--shadow);border:1px solid var(--border-light)}
+.stacked-chart-card{background:var(--card);border-radius:var(--radius);padding:14px 18px 12px;box-shadow:var(--shadow);border:1px solid var(--border-light);margin-top:12px;}
 .right-charts-col{display:flex;flex-direction:column;gap:12px;min-width:0;overflow:hidden;height:100%}
 .port-chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .port-chart-title{font-size:13px;font-weight:700}
@@ -1256,7 +1257,7 @@ function renderSummary(el){
   var tp=tv-tc+tdiv,tpp=tic>0?(tp/tic*100):0,tsg=tp-tfx-tdiv;
   var allH=accs.reduce(function(arr,a){return arr.concat(a.holdings.map(function(h){return Object.assign({},h,{accountName:a.name,accountId:a.id});}));},[]);
   var mergedH=mergeHoldingsBySymbol(allH);
-  el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('','All Stocks'))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
+  el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('','All Stocks'))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>'+stackedChartHTML();
   requestAnimationFrame(function(){var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);initDonut(mergedH,getCashItems(accs));});
   bindHoldingClicks(el,true);initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
@@ -1375,7 +1376,7 @@ function renderOverview(el){
 
   var allH=allAccs.reduce(function(arr,a){return arr.concat(a.holdings.map(function(h){return Object.assign({},h,{accountName:a.name,accountId:a.id});}));},[]);
   var mergedH=mergeHoldingsBySymbol(allH);
-  var botRow='<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
+  var botRow='<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>'+stackedChartHTML();
   var table='<div class="holdings-card" style="margin-bottom:16px">'+
     '<div class="sticky-table-head">'+heroHTML('','Overview')+'<div class="holdings-header"><span class="holdings-title">Portfolio Overview</span></div>'+
     '</div><div class="holdings-scroll">'+thead+rows+totalRow+'</div>'+
@@ -1393,7 +1394,7 @@ function renderCategory(el,catId){
   var tp=tv-tc+tdiv,tpp=tic>0?(tp/tic*100):0,tsg=tp-tfx-tdiv;
   var allH=accs.reduce(function(arr,a){return arr.concat(a.holdings.map(function(h){return Object.assign({},h,{accountName:a.name,accountId:a.id});}));},[]);
   var mergedH=mergeHoldingsBySymbol(allH);
-  el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('',esc(cat.name)))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
+  el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('',esc(cat.name)))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>'+stackedChartHTML();
   requestAnimationFrame(function(){var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);initDonut(mergedH,getCashItems(accs));});
   bindHoldingClicks(el,true);initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
@@ -1977,10 +1978,10 @@ function _buildChartDataFromSeries(series,cutoffDate){
         portVal+=lot.shares*price*fx;costVal+=_chartCostBasis(lot,hs.h);hasAny=true;
       });
     });
-    if(hasAny){validDates.push(date);portValues.push(portVal);profValues.push(portVal-costVal);}
+    if(hasAny){validDates.push(date);portValues.push(portVal);profValues.push(portVal-costVal);costValues.push(costVal);}
   });
   if(validDates.length<2)return null;
-  return{dates:validDates,portValues:portValues,profValues:profValues};
+  return{dates:validDates,portValues:portValues,profValues:profValues,costValues:costValues};
 }
 var _CHART_CACHE_KEY='folio_chart_v4';
 function _chartCacheGet(rangeKey){
@@ -2036,6 +2037,118 @@ function _chartCardHTML(canvasId,tooltipId,msgId,wrapClass,title,activeRange){
 }
 function portfolioChartHTML(){return _chartCardHTML('portChartCanvas','portChartTooltip','portChartMsg','port-chart-card','Mkt Value (excl Cash)',_portRange);}
 function profitChartHTML(){return _chartCardHTML('profChartCanvas','profChartTooltip','profChartMsg','profit-chart-card','Profit History',_portRange);}
+function stackedChartHTML(){return'<div class="stacked-chart-card"><div class="port-chart-header"><div style="display:flex;align-items:center;gap:14px"><span class="port-chart-title">Invested vs. Market Value</span><span style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#444"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(0,113,227,0.55)"></span>Invested</span><span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#444"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(52,199,89,0.55)"></span>Profit</span></span></div></div><div class="port-chart-wrap"><canvas id="stackedChartCanvas" class="port-chart-canvas" height="220"></canvas><div id="stackedChartTooltip" class="port-chart-tooltip"></div></div><div id="stackedChartMsg" class="port-chart-msg" style="display:none">Loading...</div></div>';}
+
+function _drawStackedChart(canvas,tooltipId,data,selRange){
+  var dates=data.dates,portVals=data.portValues,costVals=data.costValues,n=dates.length;
+  if(!n||!costVals||costVals.length!==n)return;
+  var dpr=window.devicePixelRatio||1;
+  var W=canvas.parentElement.clientWidth||600;
+  var H=220;
+  var newW=Math.round(W*dpr),newH=Math.round(H*dpr);
+  if(canvas.width!==newW||canvas.height!==newH){canvas.width=newW;canvas.height=newH;canvas.style.width=W+'px';canvas.style.height=H+'px';}
+  var ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  var PL=64,PR=12,PT=22,PB=28,cW=W-PL-PR,cH=H-PT-PB;
+  var maxV=Math.max.apply(null,portVals);if(maxV===0)return;
+  var minV=0,vR=maxV*1.08-minV;
+  maxV=minV+vR;
+  function xOf(i){return PL+(n>1?i/(n-1):0.5)*cW;}
+  function yOf(v){return PT+(1-(v-minV)/vR)*cH;}
+  var ptsCost=costVals.map(function(v,i){return{x:xOf(i),y:yOf(v),v:v};});
+  var ptsPort=portVals.map(function(v,i){return{x:xOf(i),y:yOf(v),v:v};});
+  function cp(pts,i){
+    var p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[Math.min(n-1,i+1)],p3=pts[Math.min(n-1,i+2)];
+    return{c1x:p1.x+(p2.x-p0.x)/6,c1y:p1.y+(p2.y-p0.y)/6,c2x:p2.x-(p3.x-p1.x)/6,c2y:p2.y-(p3.y-p1.y)/6};
+  }
+  // Grid
+  ctx.font='10px -apple-system,sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
+  for(var g=0;g<=4;g++){
+    var gy=PT+(g/4)*cH,gv=maxV-(g/4)*vR;
+    ctx.strokeStyle='rgba(0,0,0,0.05)';ctx.lineWidth=1;ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(PL,gy);ctx.lineTo(W-PR,gy);ctx.stroke();
+    ctx.fillStyle='#8e8e93';ctx.fillText(_portFmtVal(gv),PL-6,gy);
+  }
+  ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(PL,PT);ctx.lineTo(PL,PT+cH);ctx.stroke();
+  var bottomY=yOf(0);
+  // Blue area: 0 → costVal
+  var blueGrad=ctx.createLinearGradient(0,PT,0,PT+cH);
+  blueGrad.addColorStop(0,'rgba(0,113,227,0.42)');blueGrad.addColorStop(1,'rgba(0,113,227,0.18)');
+  ctx.beginPath();ctx.moveTo(ptsCost[0].x,bottomY);ctx.lineTo(ptsCost[0].x,ptsCost[0].y);
+  for(var i=0;i<n-1;i++){var c=cp(ptsCost,i);ctx.bezierCurveTo(c.c1x,c.c1y,c.c2x,c.c2y,ptsCost[i+1].x,ptsCost[i+1].y);}
+  ctx.lineTo(ptsCost[n-1].x,bottomY);ctx.closePath();ctx.fillStyle=blueGrad;ctx.fill();
+  // Green area: costVal → portVal
+  var greenGrad=ctx.createLinearGradient(0,PT,0,PT+cH);
+  greenGrad.addColorStop(0,'rgba(52,199,89,0.42)');greenGrad.addColorStop(1,'rgba(52,199,89,0.14)');
+  ctx.beginPath();ctx.moveTo(ptsPort[0].x,ptsCost[0].y);
+  for(var i=0;i<n-1;i++){var c=cp(ptsPort,i);ctx.bezierCurveTo(c.c1x,c.c1y,c.c2x,c.c2y,ptsPort[i+1].x,ptsPort[i+1].y);}
+  for(var i=n-1;i>0;i--){var c=cp(ptsCost,i-1);ctx.bezierCurveTo(c.c2x,c.c2y,c.c1x,c.c1y,ptsCost[i-1].x,ptsCost[i-1].y);}
+  ctx.closePath();ctx.fillStyle=greenGrad;ctx.fill();
+  // Cost line (blue)
+  ctx.beginPath();ctx.moveTo(ptsCost[0].x,ptsCost[0].y);
+  for(var i=0;i<n-1;i++){var c=cp(ptsCost,i);ctx.bezierCurveTo(c.c1x,c.c1y,c.c2x,c.c2y,ptsCost[i+1].x,ptsCost[i+1].y);}
+  ctx.strokeStyle='rgba(0,113,227,0.85)';ctx.lineWidth=1.5;ctx.setLineDash([]);ctx.stroke();
+  // Port value line (green)
+  ctx.beginPath();ctx.moveTo(ptsPort[0].x,ptsPort[0].y);
+  for(var i=0;i<n-1;i++){var c=cp(ptsPort,i);ctx.bezierCurveTo(c.c1x,c.c1y,c.c2x,c.c2y,ptsPort[i+1].x,ptsPort[i+1].y);}
+  ctx.strokeStyle='rgba(52,199,89,0.95)';ctx.lineWidth=2;ctx.stroke();
+  // Tick pills + dots + date labels (on portVal line)
+  var tickCount=Math.min(6,n);
+  for(var j=0;j<tickCount;j++){
+    var idx=Math.round(j/(tickCount-1||1)*(n-1));
+    var rx=xOf(idx),dotY=ptsPort[idx].y;
+    ctx.font='bold 9.5px -apple-system,sans-serif';
+    var label=_portFmtVal(portVals[idx]);
+    var lw2=ctx.measureText(label).width,pw=lw2+14,ph=17,pr2=8.5;
+    var lty=Math.max(dotY-ph-8,PT+2);
+    ctx.fillStyle='rgba(255,255,255,0.95)';ctx.strokeStyle='rgba(0,0,0,0.13)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.roundRect(rx-pw/2,lty,pw,ph,pr2);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#1d1d1f';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,rx,lty+ph/2);
+    ctx.beginPath();ctx.arc(rx,dotY,4.5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+    ctx.beginPath();ctx.arc(rx,dotY,3,0,Math.PI*2);ctx.fillStyle='#34c759';ctx.fill();
+    ctx.textAlign='center';ctx.textBaseline='top';ctx.fillStyle='#8e8e93';ctx.font='9.5px -apple-system,sans-serif';
+    ctx.fillText(_portDateLabel(dates[idx]),rx,PT+cH+6);
+  }
+  // Hover overlay canvas
+  canvas._spd={dates:dates,portVals:portVals,costVals:costVals,n:n,xOf:xOf,yOf:yOf,PL:PL,PR:PR,PT:PT,cH:cH,cW:cW,W:W,H:H,tooltipId:tooltipId};
+  var ov=canvas._ovCanvas;
+  if(!ov){
+    ov=document.createElement('canvas');ov.style.cssText='position:absolute;top:0;left:0;pointer-events:all;cursor:crosshair;';
+    var par=canvas.parentElement;if(window.getComputedStyle(par).position==='static')par.style.position='relative';
+    canvas.style.pointerEvents='none';par.appendChild(ov);canvas._ovCanvas=ov;
+  }
+  ov.style.width=W+'px';ov.style.height=H+'px';
+  if(ov.width!==newW||ov.height!==newH){ov.width=newW;ov.height=newH;}
+  var octx=ov.getContext('2d');octx.setTransform(dpr,0,0,dpr,0,0);octx.clearRect(0,0,W,H);
+  if(!canvas._sphBound){
+    canvas._sphBound=true;
+    ov.addEventListener('mousemove',function(e){
+      var pd=canvas._spd;if(!pd)return;
+      var bz=parseFloat(document.body.style.zoom)||1;
+      var rect=ov.getBoundingClientRect();
+      var mx=e.clientX/bz-rect.left,my=e.clientY/bz-rect.top;
+      var oc=ov.getContext('2d');oc.setTransform(dpr,0,0,dpr,0,0);oc.clearRect(0,0,pd.W,pd.H);
+      if(mx<pd.PL||mx>pd.W-pd.PR){var tip2=document.getElementById(pd.tooltipId);if(tip2)tip2.style.display='none';return;}
+      var i=Math.max(0,Math.min(pd.n-1,Math.round((mx-pd.PL)/pd.cW*(pd.n-1))));
+      var tip=document.getElementById(pd.tooltipId);
+      if(tip){
+        var profit=pd.portVals[i]-pd.costVals[i];
+        tip.innerHTML=_portDateLabel(pd.dates[i])+'&nbsp;&middot;&nbsp;<span style="color:#0071e3">Inv: '+fmtC(pd.costVals[i])+'</span>&nbsp;&nbsp;<span style="color:#34c759">+'+fmtC(profit)+'</span>&nbsp;&nbsp;<b>'+fmtC(pd.portVals[i])+'</b>';
+        tip.style.display='block';tip.style.left=Math.min(mx+14,pd.W-220)+'px';tip.style.top=Math.max(my-32,4)+'px';
+      }
+      var hx=pd.xOf(i),hy=pd.yOf(pd.portVals[i]);
+      oc.beginPath();oc.moveTo(hx,pd.PT);oc.lineTo(hx,pd.PT+pd.cH);oc.strokeStyle='rgba(0,0,0,0.18)';oc.lineWidth=1;oc.stroke();
+      oc.beginPath();oc.arc(hx,hy,4,0,Math.PI*2);oc.fillStyle='#34c759';oc.fill();
+    });
+    ov.addEventListener('mouseleave',function(){
+      var pd=canvas._spd;if(!pd)return;
+      var tip=document.getElementById(pd.tooltipId);if(tip)tip.style.display='none';
+      var oc=ov.getContext('2d');oc.setTransform(dpr,0,0,dpr,0,0);oc.clearRect(0,0,pd.W,pd.H);
+    });
+  }
+}
 
 function setPortRange(r){
   _portRange=r;
@@ -2091,9 +2204,9 @@ async function initPortfolioChart(holdings,selRange){
 
   function addTodayPoint(data){
     var td=new Date().toISOString().slice(0,10);
-    var dates=data.dates.slice(),pvs=data.portValues.slice(),prfs=data.profValues.slice();
+    var dates=data.dates.slice(),pvs=data.portValues.slice(),prfs=data.profValues.slice(),cvs=data.costValues?data.costValues.slice():[];
     // Remove stale today entry so we always recompute with live prices
-    if(dates.length&&dates[dates.length-1]===td){dates.pop();pvs.pop();prfs.pop();}
+    if(dates.length&&dates[dates.length-1]===td){dates.pop();pvs.pop();prfs.pop();if(cvs.length)cvs.pop();}
     if(!dates.length||dates[dates.length-1]<td){
       var pv=0,cv=0,ok=false;
       // Use _portHoldings directly — same data as stat cards, available immediately from localStorage
@@ -2105,9 +2218,9 @@ async function initPortfolioChart(holdings,selRange){
           pv+=lot.shares*price*fx;cv+=_chartCostBasis(lot,h);ok=true;
         });
       });
-      if(ok){dates.push(td);pvs.push(pv);prfs.push(pv-cv);}
+      if(ok){dates.push(td);pvs.push(pv);prfs.push(pv-cv);cvs.push(cv);}
     }
-    return{dates:dates,portValues:pvs,profValues:prfs};
+    return{dates:dates,portValues:pvs,profValues:prfs,costValues:cvs};
   }
   function renderCharts(data){
     var d=addTodayPoint(data);
@@ -2115,6 +2228,8 @@ async function initPortfolioChart(holdings,selRange){
     _drawPortChart(canvas,'portChartTooltip',{dates:d.dates,values:d.portValues},selRange,_portOverlays);
     if(canvas2){if(msg2)msg2.style.display='none';canvas2.style.display='block';
       _drawPortChart(canvas2,'profChartTooltip',{dates:d.dates,values:d.profValues},selRange,_portOverlays);}
+    var canvas3=document.getElementById('stackedChartCanvas');
+    if(canvas3&&d.costValues&&d.costValues.length){var msg3=document.getElementById('stackedChartMsg');if(msg3)msg3.style.display='none';canvas3.style.display='block';_drawStackedChart(canvas3,'stackedChartTooltip',d,selRange);}
     _portRenderChartsGlobal=renderCharts;_portChartDataGlobal=data;
     _onChartDataReady(d);
   }
@@ -2221,7 +2336,7 @@ async function initPortfolioChart(holdings,selRange){
       return map;
     });
 
-    var validDates=[],portValues=[],profValues=[];
+    var validDates=[],portValues=[],profValues=[],costValues=[];
     sortedDates.forEach(function(date){
       var portVal=0,costVal=0,hasAny=false;
       holdingSeries.forEach(function(hs,hi){
@@ -2237,11 +2352,11 @@ async function initPortfolioChart(holdings,selRange){
           hasAny=true;
         });
       });
-      if(hasAny){validDates.push(date);portValues.push(portVal);profValues.push(portVal-costVal);}
+      if(hasAny){validDates.push(date);portValues.push(portVal);profValues.push(portVal-costVal);costValues.push(costVal);}
     });
 
     if(validDates.length<2)return null;
-    return{dates:validDates,portValues:portValues,profValues:profValues};
+    return{dates:validDates,portValues:portValues,profValues:profValues,costValues:costValues};
   }
 
   function tryDraw(){
@@ -2251,6 +2366,8 @@ async function initPortfolioChart(holdings,selRange){
     _drawPortChart(canvas,'portChartTooltip',{dates:d.dates,values:d.portValues},selRange,_portOverlays);
     if(canvas2&&msg2){msg2.style.display='none';canvas2.style.display='block';
       _drawPortChart(canvas2,'profChartTooltip',{dates:d.dates,values:d.profValues},selRange,_portOverlays);}
+    var canvas3=document.getElementById('stackedChartCanvas');
+    if(canvas3&&d.costValues&&d.costValues.length){var msg3=document.getElementById('stackedChartMsg');if(msg3)msg3.style.display='none';canvas3.style.display='block';_drawStackedChart(canvas3,'stackedChartTooltip',d,selRange);}
   }
 
   // Fetch S&P 500 and Nasdaq overlays in parallel with holdings
