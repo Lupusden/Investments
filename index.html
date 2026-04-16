@@ -1221,6 +1221,19 @@ function autoSizeCols(card,isRollup){
   });
 }
 
+function autoSizeOverviewCols(card){
+  // Fixed column widths (px) for all non-name columns — must match cols definition in renderOverview
+  var FIXED_COLS=[90,90,80,90,58,80,90,72,90,72];
+  var fixedTotal=FIXED_COLS.reduce(function(s,v){return s+v;},0);
+  var nameW=Math.max(160,card.clientWidth-20-fixedTotal);
+  var tpl=nameW+'px '+FIXED_COLS.join('px ')+'px';
+  // Apply identical inline string to every row — same fix as autoSizeCols for account tabs.
+  // fr/minmax units resolve per-element on iOS Safari; fixed px strings are always identical.
+  card.querySelectorAll('.ov-grid-row').forEach(function(row){
+    row.style.gridTemplateColumns=tpl;
+  });
+}
+
 function render(){
   var content=document.getElementById('appContent');
   if(activeTab==='overview'){renderOverview(content);}
@@ -1257,21 +1270,8 @@ function renderSummary(el){
   var allH=accs.reduce(function(arr,a){return arr.concat(a.holdings.map(function(h){return Object.assign({},h,{accountName:a.name,accountId:a.id});}));},[]);
   var mergedH=mergeHoldingsBySymbol(allH);
   el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('','All Stocks'))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
-  requestAnimationFrame(function(){var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);initDonut(mergedH,getCashItems(accs));});
-  bindHoldingClicks(el,true);initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
-}
-
-function autoSizeOverviewCols(card){
-  // Fixed column widths (px) for all non-name columns — must match cols definition in renderOverview
-  var FIXED_COLS=[90,90,80,90,58,80,90,72,90,72];
-  var fixedTotal=FIXED_COLS.reduce(function(s,v){return s+v;},0); // 812
-  var nameW=Math.max(160,card.clientWidth-20-fixedTotal);
-  var tpl=nameW+'px '+FIXED_COLS.join('px ')+'px';
-  // Apply identical inline string to every row — same fix as autoSizeCols for account tabs.
-  // fr/minmax units resolve per-element on iOS Safari; fixed px strings are always identical.
-  card.querySelectorAll('.ov-grid-row').forEach(function(row){
-    row.style.gridTemplateColumns=tpl;
-  });
+  var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);
+  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
 
 function renderOverview(el){
@@ -1382,8 +1382,8 @@ function renderOverview(el){
     '</div>';
 
   el.innerHTML=statsHTML(gtv,gtc,gtp,gtpp,gtd,gtfx,gtsg,allAccs,gtdiv)+table+botRow;
-  requestAnimationFrame(function(){var ovCard=el.querySelector('.holdings-card');if(ovCard)autoSizeOverviewCols(ovCard);initDonut(mergedH,getCashItems(allAccs));});
-  bindHoldingClicks(el,true);initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
+  var ovCard=el.querySelector('.holdings-card');if(ovCard)autoSizeOverviewCols(ovCard);
+  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(allAccs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
 
 function renderCategory(el,catId){
@@ -1394,16 +1394,16 @@ function renderCategory(el,catId){
   var allH=accs.reduce(function(arr,a){return arr.concat(a.holdings.map(function(h){return Object.assign({},h,{accountName:a.name,accountId:a.id});}));},[]);
   var mergedH=mergeHoldingsBySymbol(allH);
   el.innerHTML=statsHTML(tv,tc,tp,tpp,td,tfx,tsg,accs,tdiv)+holdingsHTML(mergedH,true,null,accs,heroHTML('',esc(cat.name)))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(mergedH)+'</div></div>';
-  requestAnimationFrame(function(){var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);initDonut(mergedH,getCashItems(accs));});
-  bindHoldingClicks(el,true);initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
+  var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,true);
+  bindHoldingClicks(el,true);initDonut(mergedH,getCashItems(accs));initPortfolioChart(allH,_portRange);anim(el);_fillMktPills();
 }
 
 function renderAccount(el,acc){
   var s=calcAccountStats(acc);var tpp=s.invCost>0?(s.totalPnL/s.invCost*100):0;var tsg=s.totalPnL-s.totalFxGain-s.totalDividends;
   var cat=getCategory(acc.categoryId);
   el.innerHTML=statsHTML(s.totalValue,s.totalCost,s.totalPnL,tpp,s.totalDailyPnL,s.totalFxGain,tsg,[acc],s.totalDividends)+holdingsHTML(acc.holdings,false,acc,null,heroHTML(cat?cat.name:'',esc(acc.name)))+'<div class="bottom-row"><div class="charts-col">'+profitChartHTML()+chartHTML()+'</div><div class="right-charts-col">'+portfolioChartHTML()+perfHTML(acc.holdings)+'</div></div>';
-  requestAnimationFrame(function(){var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,false);initDonut(acc.holdings,getCashItems([acc]));});
-  bindHoldingClicks(el,false,acc);initPortfolioChart(acc.holdings,_portRange);anim(el);_fillMktPills();
+  var hc=el.querySelector('.holdings-card');if(hc)autoSizeCols(hc,false);
+  bindHoldingClicks(el,false,acc);initDonut(acc.holdings,getCashItems([acc]));initPortfolioChart(acc.holdings,_portRange);anim(el);_fillMktPills();
 }
 
 function heroHTML(catName,title){
@@ -1482,7 +1482,6 @@ var _mktDefs=[
   {sym:'USDCAD=X',label:'DOLLAR',prefix:'',suffix:'',dec:4,isFx:true},
   {sym:'GC=F',label:'GOLD (oz.)',prefix:'US$',suffix:'',dec:2},
   {sym:'CL=F',label:'OIL (WTI)',prefix:'US$',suffix:'',dec:2},
-  {sym:'BTC-USD',label:'BITCOIN',prefix:'US$',suffix:'',dec:0},
   {sym:'^TMBMKCA-10Y',label:'GCAN (10-YR)',prefix:'',suffix:'%',dec:2},
 ];
 var _mktYfUrl='https://finance.yahoo.com/quote/';
