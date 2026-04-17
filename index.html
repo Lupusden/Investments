@@ -2325,7 +2325,7 @@ function _portDateLabel(dateStr){
   var d=new Date(dateStr);
   return d.getDate()+_PMONS[d.getMonth()]+"'"+String(d.getFullYear()).slice(2);
 }
-function _portFmtVal(v){return Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'M':Math.abs(v)>=1e3?(v/1e3).toFixed(0)+'K':v.toFixed(0);}
+function _portFmtVal(v){return Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':Math.abs(v)>=1e3?(v/1e3).toFixed(2)+'K':v.toFixed(2);}
 
 function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
   var dates=data.dates,values=data.values,n=dates.length;
