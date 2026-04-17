@@ -1951,7 +1951,11 @@ var _rangeDays={'1W':8,'1M':32,'6M':185,'1Y':368,'5Y':1830,'Max':null};
 function _buildChartDataFromSeries(series,cutoffDate){
   if(!series||!series.length)return null;
   var allDates={};
-  series.forEach(function(hs){hs.pts.forEach(function(p){if(!cutoffDate||p.date>=cutoffDate)allDates[p.date]=true;});});
+  var hasRealSeries=series.some(function(hs){return hs.pts.length>2;});
+  series.forEach(function(hs){
+    if(hasRealSeries&&hs.pts.length<=2)return;
+    hs.pts.forEach(function(p){if(!cutoffDate||p.date>=cutoffDate)allDates[p.date]=true;});
+  });
   var sortedDates=Object.keys(allDates).sort();
   if(sortedDates.length<2)return null;
   var priceAtDate=series.map(function(hs){
@@ -2208,7 +2212,13 @@ async function initPortfolioChart(holdings,selRange){
     var _bcd_days=_rangeDays[selRange];
     var _bcd_cutoff=_bcd_days?new Date(Date.now()-_bcd_days*86400000).toISOString().slice(0,10):null;
     var allDates={};
-    holdingSeries.forEach(function(hs){hs.pts.forEach(function(p){if(!_bcd_cutoff||p.date>=_bcd_cutoff)allDates[p.date]=true;});});
+    // Only real Yahoo series (pts>2) define the date axis — manual/fallback flat series forward-fill onto those dates
+    // This prevents a synthetic series capped to cutoff from creating an orphan date where most holdings have no price yet
+    var hasRealSeries=holdingSeries.some(function(hs){return hs.pts.length>2;});
+    holdingSeries.forEach(function(hs){
+      if(hasRealSeries&&hs.pts.length<=2)return;
+      hs.pts.forEach(function(p){if(!_bcd_cutoff||p.date>=_bcd_cutoff)allDates[p.date]=true;});
+    });
     var sortedDates=Object.keys(allDates).sort();
     if(sortedDates.length<2)return null;
 
