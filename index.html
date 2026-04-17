@@ -2326,6 +2326,17 @@ function _portDateLabel(dateStr){
   return d.getDate()+_PMONS[d.getMonth()]+"'"+String(d.getFullYear()).slice(2);
 }
 function _portFmtVal(v){return Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':Math.abs(v)>=1e3?(v/1e3).toFixed(2)+'K':v.toFixed(2);}
+function _niceAxisTicks(dataMin,dataMax){
+  if(dataMin===dataMax){dataMin-=1;dataMax+=1;}
+  var range=dataMax-dataMin,rawStep=range/4;
+  var mag=Math.pow(10,Math.floor(Math.log10(rawStep||1)));
+  var n=rawStep/mag;
+  var step=(n<1.5?1:n<3?2:n<7?5:10)*mag;
+  var lo=Math.floor(dataMin/step)*step,hi=Math.ceil(dataMax/step)*step;
+  var ticks=[],iters=0;
+  while(lo+ticks.length*step<=hi+step*0.001&&iters++<20)ticks.push(lo+ticks.length*step);
+  return{min:lo,max:hi,ticks:ticks};
+}
 
 function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
   var dates=data.dates,values=data.values,n=dates.length;
@@ -2342,10 +2353,8 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
   var hasOv=overlays&&overlays.length>0;
   var PL=64,PR=hasOv?62:12,PT=22,PB=28,cW=W-PL-PR,cH=H-PT-PB;
   var minV=Math.min.apply(null,values),maxV=Math.max.apply(null,values);
-  if(minV===maxV){minV-=1;maxV+=1;}
   var hasNeg=minV<0||values.some(function(v){return v<0;});
-  var pad=(maxV-minV)*0.15;
-  minV=minV-pad; maxV=maxV+pad;
+  var ax=_niceAxisTicks(minV,maxV);minV=ax.min;maxV=ax.max;
   var vR=maxV-minV;
   var lc='#34c759';
   function xOf(i){return PL+(n>1?i/(n-1):0.5)*cW;}
@@ -2368,14 +2377,14 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
     var allOvVals=[];ovFilled.forEach(function(o){o.vals.forEach(function(v){if(v!=null)allOvVals.push(v);});});
     var sMin=Math.min.apply(null,allOvVals),sMax=Math.max.apply(null,allOvVals);
     if(sMin===sMax){sMin-=100;sMax+=100;}
-    var sPad=(sMax-sMin)*0.12;sMin-=sPad;sMax+=sPad;var sR=sMax-sMin;
+    var sax=_niceAxisTicks(sMin,sMax);sMin=sax.min;sMax=sax.max;var sR=sMax-sMin;
     function yOfOv(v){return PT+(1-(v-sMin)/sR)*cH;}
-    // Right axis labels
+    // Right axis labels — nice round ticks
     ctx.font='10px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
-    for(var g=0;g<=4;g++){
-      var gv2=sMax-(g/4)*sR,gy2=PT+(g/4)*cH;
+    sax.ticks.forEach(function(gv2){
+      var gy2=yOfOv(gv2);if(gy2<PT-2||gy2>PT+cH+2)return;
       ctx.fillStyle='rgba(0,113,227,0.7)';ctx.fillText(_portFmtVal(gv2),W-PR+6,gy2);
-    }
+    });
     // Right axis rule
     ctx.strokeStyle='rgba(0,113,227,0.15)';ctx.lineWidth=1;ctx.setLineDash([]);
     ctx.beginPath();ctx.moveTo(W-PR,PT);ctx.lineTo(W-PR,PT+cH);ctx.stroke();
@@ -2387,14 +2396,14 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
     });
   }
 
-  // Grid lines
+  // Grid lines — at nice round tick values
   ctx.font='10px -apple-system,sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
-  for(var g=0;g<=4;g++){
-    var gy=PT+(g/4)*cH,gv=maxV-(g/4)*vR;
+  ax.ticks.forEach(function(gv){
+    var gy=yOf(gv);if(gy<PT-2||gy>PT+cH+2)return;
     ctx.strokeStyle='rgba(0,0,0,0.05)';ctx.lineWidth=1;ctx.setLineDash([]);
     ctx.beginPath();ctx.moveTo(PL,gy);ctx.lineTo(W-PR,gy);ctx.stroke();
     ctx.fillStyle='#8e8e93';ctx.fillText(_portFmtVal(gv),PL-6,gy);
-  }
+  });
   // Left axis rule
   ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(PL,PT);ctx.lineTo(PL,PT+cH);ctx.stroke();
