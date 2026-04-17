@@ -2116,7 +2116,7 @@ async function initPortfolioChart(holdings,selRange){
     if(msg)msg.style.display='none';canvas.style.display='block';
     _drawPortChart(canvas,'portChartTooltip',{dates:d.dates,values:d.portValues},selRange,[]);
     if(canvas2){if(msg2)msg2.style.display='none';canvas2.style.display='block';
-      _drawPortChart(canvas2,'profChartTooltip',{dates:d.dates,values:d.profValues},selRange,_portOverlays);}
+      _drawPortChart(canvas2,'profChartTooltip',{dates:d.dates,values:d.profValues},selRange,_portOverlays,_portFmtValDollar);}
     _portRenderChartsGlobal=renderCharts;_portChartDataGlobal=data;
     _onChartDataReady(d);
   }
@@ -2262,7 +2262,7 @@ async function initPortfolioChart(holdings,selRange){
     if(msg)msg.style.display='none';canvas.style.display='block';
     _drawPortChart(canvas,'portChartTooltip',{dates:d.dates,values:d.portValues},selRange,[]);
     if(canvas2&&msg2){msg2.style.display='none';canvas2.style.display='block';
-      _drawPortChart(canvas2,'profChartTooltip',{dates:d.dates,values:d.profValues},selRange,_portOverlays);}
+      _drawPortChart(canvas2,'profChartTooltip',{dates:d.dates,values:d.profValues},selRange,_portOverlays,_portFmtValDollar);}
   }
 
   // Fetch S&P 500 and Nasdaq overlays in parallel with holdings
@@ -2336,6 +2336,7 @@ function _portDateLabel(dateStr){
   return d.getDate()+_PMONS[d.getMonth()]+"'"+String(d.getFullYear()).slice(2);
 }
 function _portFmtVal(v){return Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':Math.abs(v)>=1e3?(v/1e3).toFixed(2)+'K':v.toFixed(2);}
+function _portFmtValDollar(v){var s=v<0?'-':'',a=Math.abs(v);return s+'$'+(a>=1e6?(a/1e6).toFixed(0)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0));}
 function _niceAxisTicks(dataMin,dataMax){
   if(dataMin===dataMax){dataMin-=1;dataMax+=1;}
   var range=dataMax-dataMin,rawStep=range/4;
@@ -2348,7 +2349,8 @@ function _niceAxisTicks(dataMin,dataMax){
   return{min:lo,max:hi,ticks:ticks};
 }
 
-function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
+function _drawPortChart(canvas,tooltipId,data,selRange,overlays,fmtFn){
+  fmtFn=fmtFn||_portFmtVal;
   var dates=data.dates,values=data.values,n=dates.length;
   if(!n)return;
   var dpr=window.devicePixelRatio||1;
@@ -2393,7 +2395,7 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
     ctx.font='10px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
     sax.ticks.forEach(function(gv2){
       var gy2=yOfOv(gv2);if(gy2<PT-2||gy2>PT+cH+2)return;
-      ctx.fillStyle='rgba(0,113,227,0.7)';ctx.fillText(_portFmtVal(gv2),W-PR+6,gy2);
+      ctx.fillStyle='rgba(0,113,227,0.7)';ctx.fillText(fmtFn(gv2),W-PR+6,gy2);
     });
     // Right axis rule
     ctx.strokeStyle='rgba(0,113,227,0.15)';ctx.lineWidth=1;ctx.setLineDash([]);
@@ -2412,7 +2414,7 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
     var gy=yOf(gv);if(gy<PT-2||gy>PT+cH+2)return;
     ctx.strokeStyle='rgba(0,0,0,0.05)';ctx.lineWidth=1;ctx.setLineDash([]);
     ctx.beginPath();ctx.moveTo(PL,gy);ctx.lineTo(W-PR,gy);ctx.stroke();
-    ctx.fillStyle='#8e8e93';ctx.fillText(_portFmtVal(gv),PL-6,gy);
+    ctx.fillStyle='#8e8e93';ctx.fillText(fmtFn(gv),PL-6,gy);
   });
   // Left axis rule
   ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=1;
@@ -2456,7 +2458,7 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays){
     var rx=xOf(idx),dotY=yOf(values[idx]);
     // Pill — centered on actual data x
     ctx.font='bold 9.5px -apple-system,sans-serif';
-    var label=_portFmtVal(values[idx]);
+    var label=fmtFn(values[idx]);
     var lw=ctx.measureText(label).width,pw=lw+14,ph=17,pr=8.5;
     var lty=Math.max(dotY-ph-8,PT+2);
     ctx.fillStyle='rgba(255,255,255,0.95)';
