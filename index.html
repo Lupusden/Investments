@@ -2114,7 +2114,7 @@ async function initPortfolioChart(holdings,selRange){
     if(_myToken!==_portChartToken)return; // stale: a newer range was selected, don't overwrite
     var d=addTodayPoint(data);
     if(msg)msg.style.display='none';canvas.style.display='block';
-    _drawPortChart(canvas,'portChartTooltip',{dates:d.dates,values:d.portValues},selRange,_portOverlays);
+    _drawPortChart(canvas,'portChartTooltip',{dates:d.dates,values:d.portValues},selRange,[]);
     if(canvas2){if(msg2)msg2.style.display='none';canvas2.style.display='block';
       _drawPortChart(canvas2,'profChartTooltip',{dates:d.dates,values:d.profValues},selRange,_portOverlays);}
     _portRenderChartsGlobal=renderCharts;_portChartDataGlobal=data;
@@ -2260,7 +2260,7 @@ async function initPortfolioChart(holdings,selRange){
     var d=buildChartData();
     if(!d||d.dates.length<2)return;
     if(msg)msg.style.display='none';canvas.style.display='block';
-    _drawPortChart(canvas,'portChartTooltip',{dates:d.dates,values:d.portValues},selRange,_portOverlays);
+    _drawPortChart(canvas,'portChartTooltip',{dates:d.dates,values:d.portValues},selRange,[]);
     if(canvas2&&msg2){msg2.style.display='none';canvas2.style.display='block';
       _drawPortChart(canvas2,'profChartTooltip',{dates:d.dates,values:d.profValues},selRange,_portOverlays);}
   }
