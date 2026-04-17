@@ -1952,23 +1952,9 @@ function _buildChartDataFromSeries(series,cutoffDate){
   if(!series||!series.length)return null;
   var allDates={};
   var hasRealSeries=series.some(function(hs){return hs.pts.length>2;});
-  // Find the last data point BEFORE cutoff across all real series.
-  // Using it as the effective start ensures the first value in the derived chart matches
-  // what the wider chart shows for that date (forward-fill from the same weekly close).
-  // e.g. 5Y shows Apr-11 close for Apr-13 hover; 1Y derived from 5Y should start there too.
-  var anchorDate=null;
-  if(cutoffDate){
-    series.forEach(function(hs){
-      if(hasRealSeries&&hs.pts.length<=2)return;
-      for(var i=hs.pts.length-1;i>=0;i--){
-        if(hs.pts[i].date<cutoffDate){if(!anchorDate||hs.pts[i].date>anchorDate)anchorDate=hs.pts[i].date;break;}
-      }
-    });
-  }
-  var effectiveStart=anchorDate||cutoffDate;
   series.forEach(function(hs){
     if(hasRealSeries&&hs.pts.length<=2)return;
-    hs.pts.forEach(function(p){if(!effectiveStart||p.date>=effectiveStart)allDates[p.date]=true;});
+    hs.pts.forEach(function(p){if(!cutoffDate||p.date>=cutoffDate)allDates[p.date]=true;});
   });
   var sortedDates=Object.keys(allDates).sort();
   if(sortedDates.length<2)return null;
@@ -1996,7 +1982,7 @@ function _buildChartDataFromSeries(series,cutoffDate){
   if(validDates.length<2)return null;
   return{dates:validDates,portValues:portValues,profValues:profValues};
 }
-var _CHART_CACHE_KEY='folio_chart_v10';
+var _CHART_CACHE_KEY='folio_chart_v11';
 function _chartCacheGet(rangeKey){
   try{var s=localStorage.getItem(_CHART_CACHE_KEY);if(!s)return null;
     var obj=JSON.parse(s);var entry=obj[rangeKey];if(!entry)return null;
@@ -2022,7 +2008,7 @@ function _chartCachePurgeOldKeys(){
     Object.keys(obj).forEach(function(k){if(k.indexOf('::')===-1){delete obj[k];changed=true;}});
     if(changed)localStorage.setItem(_CHART_CACHE_KEY,JSON.stringify(obj));}catch(e){}
 }
-var _portRangeCfg={'1W':{range:'5d',interval:'1d'},'1M':{range:'1mo',interval:'1d'},'6M':{range:'6mo',interval:'1d'},'1Y':{range:'1y',interval:'1d'},'5Y':{range:'5y',interval:'1wk'},'Max':{range:'max',interval:'1mo'}};
+var _portRangeCfg={'1W':{range:'5d',interval:'1d'},'1M':{range:'1mo',interval:'1d'},'6M':{range:'6mo',interval:'1d'},'1Y':{range:'1y',interval:'1d'},'5Y':{range:'5y',interval:'1d'},'Max':{range:'max',interval:'1mo'}};
 var _PMONS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function fmtDate(dateStr){if(!dateStr)return'';var d=new Date(dateStr+'T12:00:00');return d.getDate()+_PMONS[d.getMonth()]+"'"+String(d.getFullYear()).slice(2);}
 
