@@ -1982,7 +1982,7 @@ function _buildChartDataFromSeries(series,cutoffDate){
   if(validDates.length<2)return null;
   return{dates:validDates,portValues:portValues,profValues:profValues};
 }
-var _CHART_CACHE_KEY='folio_chart_v12';
+var _CHART_CACHE_KEY='folio_chart_v13';
 function _chartCacheGet(rangeKey){
   try{var s=localStorage.getItem(_CHART_CACHE_KEY);if(!s)return null;
     var obj=JSON.parse(s);var entry=obj[rangeKey];if(!entry)return null;
@@ -2303,7 +2303,9 @@ async function initPortfolioChart(holdings,selRange){
   });
 
   await Promise.all([].concat(promises,ovPromises));
-  // Fallback: add any holding that failed Yahoo fetch as flat-price series (uses current price)
+  // Fallback: add any holding that failed Yahoo fetch as flat-price series
+  // Use avg purchase price (not currentPrice) so portVal≈costVal and profit≈0 for unknown historical prices
+  // Using currentPrice would inflate historical profit for high-growth stocks (e.g. $50 in 2021, $400 now)
   var fetchedSyms={};holdingSeries.forEach(function(hs){fetchedSyms[hs.h.symbol]=true;});
   fetchH.forEach(function(h){
     if(fetchedSyms[h.symbol]||!h.currentPrice)return;
@@ -2312,7 +2314,9 @@ async function initPortfolioChart(holdings,selRange){
     var _fb_days=_rangeDays[selRange];
     var _fb_cutoff=_fb_days?new Date(Date.now()-_fb_days*86400000).toISOString().slice(0,10):null;
     if(_fb_cutoff&&earliest<_fb_cutoff)earliest=_fb_cutoff;
-    holdingSeries.push({pts:[{date:earliest,price:h.currentPrice}],h:h,fx:fx});
+    var _fbS=0,_fbC=0;(h.lots||[]).forEach(function(l){_fbS+=l.shares||0;_fbC+=(l.shares||0)*(l.price||0);});
+    var fbPrice=_fbS>0?_fbC/_fbS:(h.currentPrice||0);
+    holdingSeries.push({pts:[{date:earliest,price:fbPrice}],h:h,fx:fx});
   });
   var finalData=buildChartData();
   if(!finalData){
