@@ -1982,7 +1982,7 @@ function _buildChartDataFromSeries(series,cutoffDate){
   if(validDates.length<2)return null;
   return{dates:validDates,portValues:portValues,profValues:profValues};
 }
-var _CHART_CACHE_KEY='folio_chart_v11';
+var _CHART_CACHE_KEY='folio_chart_v12';
 function _chartCacheGet(rangeKey){
   try{var s=localStorage.getItem(_CHART_CACHE_KEY);if(!s)return null;
     var obj=JSON.parse(s);var entry=obj[rangeKey];if(!entry)return null;
@@ -2389,13 +2389,14 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays,fmtFn){
     var allOvVals=[];ovFilled.forEach(function(o){o.vals.forEach(function(v){if(v!=null)allOvVals.push(v);});});
     var sMin=Math.min.apply(null,allOvVals),sMax=Math.max.apply(null,allOvVals);
     if(sMin===sMax){sMin-=100;sMax+=100;}
-    var sax=_niceAxisTicks(sMin,sMax);sMin=sax.min;sMax=sax.max;var sR=sMax-sMin;
+    var sStep=500,saxMin=Math.floor(sMin/sStep)*sStep,saxMax=Math.ceil(sMax/sStep)*sStep;
+    sMin=saxMin;sMax=saxMax;var sR=sMax-sMin;
     function yOfOv(v){return PT+(1-(v-sMin)/sR)*cH;}
-    // Right axis labels — nice round ticks
     ctx.font='10px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
-    sax.ticks.forEach(function(gv2){
+    var saxTicks=[],_st=saxMin;while(_st<=saxMax+1){saxTicks.push(_st);_st+=sStep;}
+    saxTicks.forEach(function(gv2){
       var gy2=yOfOv(gv2);if(gy2<PT-2||gy2>PT+cH+2)return;
-      ctx.fillStyle='rgba(0,113,227,0.7)';ctx.fillText(fmtFn(gv2),W-PR+6,gy2);
+      ctx.fillStyle='rgba(0,113,227,0.7)';ctx.fillText((gv2/1000).toFixed(1)+'K',W-PR+6,gy2);
     });
     // Right axis rule
     ctx.strokeStyle='rgba(0,113,227,0.15)';ctx.lineWidth=1;ctx.setLineDash([]);
