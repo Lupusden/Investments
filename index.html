@@ -1982,7 +1982,7 @@ function _buildChartDataFromSeries(series,cutoffDate){
   if(validDates.length<2)return null;
   return{dates:validDates,portValues:portValues,profValues:profValues};
 }
-var _CHART_CACHE_KEY='folio_chart_v13';
+var _CHART_CACHE_KEY='folio_chart_v14';
 function _chartCacheGet(rangeKey){
   try{var s=localStorage.getItem(_CHART_CACHE_KEY);if(!s)return null;
     var obj=JSON.parse(s);var entry=obj[rangeKey];if(!entry)return null;
@@ -2008,7 +2008,7 @@ function _chartCachePurgeOldKeys(){
     Object.keys(obj).forEach(function(k){if(k.indexOf('::')===-1){delete obj[k];changed=true;}});
     if(changed)localStorage.setItem(_CHART_CACHE_KEY,JSON.stringify(obj));}catch(e){}
 }
-var _portRangeCfg={'1W':{range:'5d',interval:'1d'},'1M':{range:'1mo',interval:'1d'},'6M':{range:'6mo',interval:'1d'},'1Y':{range:'1y',interval:'1d'},'5Y':{range:'5y',interval:'1d'},'Max':{range:'max',interval:'1mo'}};
+var _portRangeCfg={'1W':{range:'5d',interval:'1d'},'1M':{range:'1mo',interval:'1d'},'6M':{range:'6mo',interval:'1d'},'1Y':{range:'1y',interval:'1d'},'5Y':{range:'5y',interval:'1wk'},'Max':{range:'max',interval:'1mo'}};
 var _PMONS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function fmtDate(dateStr){if(!dateStr)return'';var d=new Date(dateStr+'T12:00:00');return d.getDate()+_PMONS[d.getMonth()]+"'"+String(d.getFullYear()).slice(2);}
 
@@ -2168,11 +2168,13 @@ async function initPortfolioChart(holdings,selRange){
     return;
   }
 
-  // Reuse existing _portHoldingSeries if it covers the requested range AND same holdings — no Yahoo fetch needed
+  // Reuse existing _portHoldingSeries if it covers the requested range AND same holdings AND same interval
+  // Interval must match: weekly 5Y series cannot derive daily 1Y data (different granularity)
   if(_portHoldingSeries.length&&_portSeriesRange&&_portSeriesHoldingsKey===holdingsKey){
     var rangeOrder=['1W','1M','6M','1Y','5Y','Max'];
     var existingIdx=rangeOrder.indexOf(_portSeriesRange),newIdx=rangeOrder.indexOf(selRange);
-    if(existingIdx>=newIdx){
+    var existingInterval=(_portRangeCfg[_portSeriesRange]||{}).interval;
+    if(existingIdx>=newIdx&&existingInterval===cfg.interval){
       // Existing series is wider or equal — filter to the new range's cutoff
       var days=_rangeDays[selRange];
       var cutoff=days?new Date(Date.now()-days*86400000).toISOString().slice(0,10):null;
