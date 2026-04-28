@@ -2414,7 +2414,7 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays,fmtFn){
   ctx.setTransform(dpr,0,0,dpr,0,0); // always set (not accumulate) the dpr scale
   ctx.clearRect(0,0,W,H);
   var hasOv=overlays&&overlays.length>0;
-  var PL=64,PR=hasOv?62:12,PT=22,PB=28,cW=W-PL-PR,cH=H-PT-PB;
+  var PL=64,PR=hasOv?62:12,PT=34,PB=28,cW=W-PL-PR,cH=H-PT-PB;
   var minV=Math.min.apply(null,values),maxV=Math.max.apply(null,values);
   var hasNeg=minV<0||values.some(function(v){return v<0;});
   var ax=_niceAxisTicks(minV,maxV);minV=ax.min;maxV=ax.max;
@@ -2512,7 +2512,7 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays,fmtFn){
     ctx.font='bold 9.5px -apple-system,sans-serif';
     var label=fmtFn(values[idx]);
     var lw=ctx.measureText(label).width,pw=lw+14,ph=17,pr=8.5;
-    var lty=Math.max(dotY-ph-8,PT+2);
+    var lty=Math.max(dotY-ph-8,2); // pill above the line — clamp to canvas top, not chart top, so pills can sit in the top padding area
     ctx.fillStyle='rgba(255,255,255,0.95)';
     ctx.strokeStyle='rgba(0,0,0,0.13)';ctx.lineWidth=1;
     ctx.beginPath();ctx.roundRect(rx-pw/2,lty,pw,ph,pr);ctx.fill();ctx.stroke();
