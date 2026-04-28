@@ -1960,9 +1960,11 @@ function _buildChartDataFromSeries(series,cutoffDate){
   if(sortedDates.length<2)return null;
   var priceAtDate=series.map(function(hs){
     var map={},last=null,pi=0;
+    var firstPrice=hs.pts.length>0?hs.pts[0].price:null; // backfill source for dates before first pts
     sortedDates.forEach(function(date){
       while(pi<hs.pts.length&&hs.pts[pi].date<=date){last=hs.pts[pi].price;pi++;}
       if(last!==null)map[date]=last;
+      else if(firstPrice!==null)map[date]=firstPrice; // backfill: prevents value drop at chart start when data series begin on slightly different first dates
     });
     return map;
   });
@@ -1984,7 +1986,7 @@ function _buildChartDataFromSeries(series,cutoffDate){
   series.forEach(function(hs){if(hs.pts.length>2||hs.h.manualPrice)realSyms[hs.h.symbol]=true;});
   return{dates:validDates,portValues:portValues,profValues:profValues,realSyms:realSyms};
 }
-var _CHART_CACHE_KEY='folio_chart_v16';
+var _CHART_CACHE_KEY='folio_chart_v17';
 function _chartCacheGet(rangeKey){
   try{var s=localStorage.getItem(_CHART_CACHE_KEY);if(!s)return null;
     var obj=JSON.parse(s);var entry=obj[rangeKey];if(!entry)return null;
@@ -2255,12 +2257,16 @@ async function initPortfolioChart(holdings,selRange){
     var sortedDates=Object.keys(allDates).sort();
     if(sortedDates.length<2)return null;
 
-    // Precompute forward-filled price per holding per date
+    // Precompute forward-filled price per holding per date, with backfill for dates before first pts
+    // Backfill prevents the chart's first date from showing only a subset of holdings — when one holding's
+    // data series starts a day later than others, its earliest known price is used for the missing earlier date(s)
     var priceAtDate=holdingSeries.map(function(hs){
       var map={},last=null,pi=0;
+      var firstPrice=hs.pts.length>0?hs.pts[0].price:null;
       sortedDates.forEach(function(date){
         while(pi<hs.pts.length&&hs.pts[pi].date<=date){last=hs.pts[pi].price;pi++;}
         if(last!==null)map[date]=last;
+        else if(firstPrice!==null)map[date]=firstPrice;
       });
       return map;
     });
