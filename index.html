@@ -1984,7 +1984,7 @@ function _buildChartDataFromSeries(series,cutoffDate){
   series.forEach(function(hs){if(hs.pts.length>2||hs.h.manualPrice)realSyms[hs.h.symbol]=true;});
   return{dates:validDates,portValues:portValues,profValues:profValues,realSyms:realSyms};
 }
-var _CHART_CACHE_KEY='folio_chart_v15';
+var _CHART_CACHE_KEY='folio_chart_v16';
 function _chartCacheGet(rangeKey){
   try{var s=localStorage.getItem(_CHART_CACHE_KEY);if(!s)return null;
     var obj=JSON.parse(s);var entry=obj[rangeKey];if(!entry)return null;
@@ -2021,7 +2021,7 @@ var _portRangeCfg={'1W':{range:'5d',interval:'1d'},'1M':{range:'1mo',interval:'1
 var _PMONS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function fmtDate(dateStr){if(!dateStr)return'';var d=new Date(dateStr+'T12:00:00');return d.getDate()+_PMONS[d.getMonth()]+"'"+String(d.getFullYear()).slice(2);}
 
-// Race all proxies concurrently — resolves on first success
+// Race all proxies concurrently — resolves on first success. 12s timeout per proxy.
 function portFetch(url){
   return new Promise(function(resolve,reject){
     var done=false,failed=0;
@@ -2029,11 +2029,19 @@ function portFetch(url){
     var total=proxies.length;
     proxies.forEach(function(p){
       var ctrl=new AbortController();
-      var t=setTimeout(function(){failed++;if(failed===total&&!done)reject(new Error('timeout'));ctrl.abort();},8000);
+      var t=setTimeout(function(){failed++;if(failed===total&&!done)reject(new Error('timeout'));ctrl.abort();},12000);
       fetch(p,{headers:{'Accept':'application/json'},signal:ctrl.signal}).then(function(r){if(!r.ok)throw new Error('not ok');return r.json();})
         .then(function(j){clearTimeout(t);if(!done&&j&&!j.error){done=true;resolve(j);}else{failed++;if(failed===total&&!done)reject(new Error('all failed'));}})
         .catch(function(){clearTimeout(t);failed++;if(failed===total&&!done)reject(new Error('all failed'));});
     });
+  });
+}
+// Retry wrapper — retries N times with delay between attempts
+function portFetchRetry(url,retries,delayMs){
+  retries=retries==null?2:retries;delayMs=delayMs||1500;
+  return portFetch(url).catch(function(e){
+    if(retries<=0)throw e;
+    return new Promise(function(r){setTimeout(r,delayMs);}).then(function(){return portFetchRetry(url,retries-1,delayMs);});
   });
 }
 
@@ -2135,26 +2143,38 @@ async function initPortfolioChart(holdings,selRange){
   _portOverlays=[];
   var _ovDefs=[{sym:'^GSPC',label:'S&P 500',color:'#0071e3'}];
 
-  // Always fetch/restore the S&P overlay — it's just 1 request and needed regardless of chart cache
+  // S&P overlay: persist across reloads using same per-symbol cache as holdings
+  // Show stale immediately, fetch fresh in background, retry on failure
   function _ensureOverlays(cb){
     var pending=_ovDefs.length,done=0;
+    var ovRange=cfg.range==='5d'?'1mo':cfg.range; // 5d can return null result; 1mo is reliable
     _ovDefs.forEach(function(o){
       var ck='ov::'+selRange+'::'+o.sym;
-      if(_portOverlayCache[ck]){
-        if(!_portOverlays.find(function(x){return x.label===o.label;}))
-          _portOverlays.push({label:o.label,color:o.color,pts:_portOverlayCache[ck]});
-        if(++done===pending&&cb)cb();return;
+      function setOverlay(pts){
+        var existing=_portOverlays.find(function(x){return x.label===o.label;});
+        if(existing){existing.pts=pts;}
+        else{_portOverlays.push({label:o.label,color:o.color,pts:pts});}
+        _portOverlayCache[ck]=pts;
       }
-      var ovRange=cfg.range==='5d'?'1mo':cfg.range; // 5d can return null result; 1mo is reliable
+      // Step 1: in-memory or persistent cache → show immediately
+      if(_portOverlayCache[ck]){
+        setOverlay(_portOverlayCache[ck]);
+      }else{
+        var cachedOv=_seriesCacheGet(o.sym,ovRange,'1d');
+        if(cachedOv&&cachedOv.pts&&cachedOv.pts.length>2){
+          setOverlay(cachedOv.pts);
+          if(_seriesCacheIsFresh(cachedOv)){if(++done===pending&&cb)cb();return;}
+        }
+      }
+      // Step 2: fetch fresh in background (with retry)
       var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(o.sym)+'?interval=1d&range='+ovRange;
-      portFetch(url).then(function(data){
+      portFetchRetry(url,2,1500).then(function(data){
         var r=data&&data.chart&&data.chart.result&&data.chart.result[0];
         if(r){var ts=r.timestamp||[],cl=(r.indicators&&r.indicators.quote&&r.indicators.quote[0]&&r.indicators.quote[0].close)||[],pts=[];
           ts.forEach(function(t,i){if(cl[i]!=null)pts.push({date:new Date(t*1000).toISOString().slice(0,10),price:cl[i]});});
           pts.sort(function(a,b){return a.date<b.date?-1:1;});
-          _portOverlayCache[ck]=pts;
-          if(!_portOverlays.find(function(x){return x.label===o.label;}))
-            _portOverlays.push({label:o.label,color:o.color,pts:pts});}
+          if(pts.length>2)_seriesCacheSet(o.sym,ovRange,'1d',pts);
+          setOverlay(pts);}
       }).catch(function(){}).finally(function(){if(++done===pending&&cb)cb();});
     });
     if(!pending&&cb)cb();
@@ -2299,37 +2319,41 @@ async function initPortfolioChart(holdings,selRange){
   });
 
   var fetchH=activeH.filter(function(h){return!h.manualPrice;});
-  // Per-symbol cache strategy: use fresh cache directly; fetch only when stale/missing;
-  // on fetch failure, fall back to stale cache (better than nothing). Holdings with NO data are skipped entirely.
+  // Stability strategy:
+  // 1. Show ANY cached data immediately (even stale) — instant chart, never blank
+  // 2. Always attempt fresh fetch in background (with retry) so today's data eventually shows up
+  // 3. When fresh data arrives, REPLACE the stale entry in holdingSeries and redraw
+  // 4. If fetch fails entirely, stale data stays visible — chart never goes blank or shows fake values
+  function _replaceOrPush(pts,h,fx){
+    for(var i=0;i<holdingSeries.length;i++){
+      if(holdingSeries[i].h.symbol===h.symbol){holdingSeries[i]={pts:pts,h:h,fx:fx};return;}
+    }
+    holdingSeries.push({pts:pts,h:h,fx:fx});
+  }
   var promises=fetchH.map(function(h){
     var fx=_chartFx(h);
     var sym=h.symbol.replace(/\//g,'-');
     var cached=_seriesCacheGet(sym,cfg.range,cfg.interval);
-    if(cached&&cached.pts&&cached.pts.length>2&&_seriesCacheIsFresh(cached)){
+    var hasCached=cached&&cached.pts&&cached.pts.length>2;
+    if(hasCached){
       holdingSeries.push({pts:cached.pts,h:h,fx:fx});
       tryDraw();
-      return Promise.resolve(true);
+      if(_seriesCacheIsFresh(cached))return Promise.resolve(true); // skip fetch — cache is from today
     }
     var url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval='+cfg.interval+'&range='+cfg.range;
-    return portFetch(url).then(function(data){
+    return portFetchRetry(url,2,1500).then(function(data){
       var r=data&&data.chart&&data.chart.result&&data.chart.result[0];
-      if(!r){
-        if(cached&&cached.pts&&cached.pts.length>2){holdingSeries.push({pts:cached.pts,h:h,fx:fx});tryDraw();}
-        return null;
-      }
+      if(!r)return null; // stale cache (if any) already shown
       var ts=r.timestamp||[];
       var cl=(r.indicators&&r.indicators.quote&&r.indicators.quote[0]&&r.indicators.quote[0].close)||[];
       var pts=[];
       ts.forEach(function(t,i){if(cl[i]!=null)pts.push({date:new Date(t*1000).toISOString().slice(0,10),price:cl[i]});});
       pts.sort(function(a,b){return a.date<b.date?-1:1;});
       if(pts.length>2)_seriesCacheSet(sym,cfg.range,cfg.interval,pts);
-      holdingSeries.push({pts:pts,h:h,fx:fx});
+      _replaceOrPush(pts,h,fx);
       tryDraw();
       return true;
-    }).catch(function(){
-      if(cached&&cached.pts&&cached.pts.length>2){holdingSeries.push({pts:cached.pts,h:h,fx:fx});tryDraw();}
-      return null;
-    });
+    }).catch(function(){return null;}); // stale cache (if any) already shown
   });
 
   await Promise.all([].concat(promises,ovPromises));
