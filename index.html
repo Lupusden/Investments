@@ -2020,7 +2020,7 @@ function _buildChartDataFromSeries(series,cutoffDate){
   series.forEach(function(hs){if(hs.pts.length>2||hs.h.manualPrice)realSyms[hs.h.symbol]=true;});
   return{dates:validDates,portValues:portValues,profValues:profValues,realSyms:realSyms};
 }
-var _CHART_CACHE_KEY='folio_chart_v17';
+var _CHART_CACHE_KEY='folio_chart_v18';
 function _chartCacheGet(rangeKey){
   try{var s=localStorage.getItem(_CHART_CACHE_KEY);if(!s)return null;
     var obj=JSON.parse(s);var entry=obj[rangeKey];if(!entry)return null;
@@ -2149,19 +2149,22 @@ async function initPortfolioChart(holdings,selRange){
     // Remove stale today entry so we always recompute with live prices
     if(dates.length&&dates[dates.length-1]===td){dates.pop();pvs.pop();prfs.pop();}
     if(!dates.length||dates[dates.length-1]<td){
-      var pv=0,cv=0,ok=false;
-      // Only include holdings that have real historical data — keeps today consistent with the historical line
+      var pvAll=0,pvReal=0,cvReal=0,ok=false;
+      // Mkt Value: ALL holdings — matches stat card. Profit: only realSyms — keeps the line consistent with history.
       var includeSyms=data.realSyms;
       holdings.forEach(function(h){
-        if(includeSyms&&!includeSyms[h.symbol])return;
         var price=h.currentPrice;if(!price)return;
         var fx=_chartFx(h);
+        var isReal=!includeSyms||includeSyms[h.symbol];
         (h.lots||[]).forEach(function(lot){
           if(!lot.date||lot.date>td)return;
-          pv+=lot.shares*price*fx;cv+=_chartCostBasis(lot,h);ok=true;
+          var portContrib=lot.shares*price*fx;
+          pvAll+=portContrib;
+          if(isReal){pvReal+=portContrib;cvReal+=_chartCostBasis(lot,h);}
+          ok=true;
         });
       });
-      if(ok){dates.push(td);pvs.push(pv);prfs.push(pv-cv);}
+      if(ok){dates.push(td);pvs.push(pvAll);prfs.push(pvReal-cvReal);}
     }
     return{dates:dates,portValues:pvs,profValues:prfs};
   }
