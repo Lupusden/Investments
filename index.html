@@ -159,7 +159,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .mkt-pills-row{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
 .mkt-pills-row::-webkit-scrollbar{display:none;}
 .mkt-pill{position:relative;display:flex;align-items:center;gap:4px;padding:5px 10px;background:var(--card);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);border:1px solid var(--border-light);flex-shrink:0;cursor:pointer;text-decoration:none;color:inherit;transition:box-shadow .15s,border-color .15s;}
-.mkt-pill-open{position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:#34c759;box-shadow:0 0 0 1px rgba(255,255,255,.9);}
+.mkt-pill-state{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;box-shadow:0 0 0 1px rgba(255,255,255,.9);}
+.mkt-pill-state.open{background:#34c759;}
+.mkt-pill-state.closed{background:#ff3b30;}
 .mkt-pill:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);border-color:var(--blue);}
 .mkt-pill-arrow{font-size:9px;line-height:1;margin-top:2px;}
 .mkt-pill-arrow.up{color:var(--green-text);}.mkt-pill-arrow.dn{color:#ff3b30;}
@@ -1483,6 +1485,33 @@ var _mktDefs=[
 ];
 var _mktYfUrl='https://finance.yahoo.com/quote/';
 var _mktData=(function(){try{var s=localStorage.getItem('_mktData');return s?JSON.parse(s):null;}catch(e){return null;}})();
+// Fallback when Yahoo's marketState wasn't captured yet (cached data from before the field was stored).
+// Returns 'REGULAR' if the market is currently open in ET time, 'CLOSED' otherwise.
+function _inferMktState(sym){
+  // Get current time in America/New_York reliably regardless of viewer's timezone
+  var parts;
+  try{
+    parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
+  }catch(e){return '';}
+  var wd='',hh=0,mm=0;
+  parts.forEach(function(p){if(p.type==='weekday')wd=p.value;else if(p.type==='hour')hh=parseInt(p.value,10)||0;else if(p.type==='minute')mm=parseInt(p.value,10)||0;});
+  var minutes=hh*60+mm;
+  var isWeekday=wd==='Mon'||wd==='Tue'||wd==='Wed'||wd==='Thu'||wd==='Fri';
+  // Equity indices: 9:30–16:00 ET, Mon–Fri
+  var equities={'^GSPTSE':1,'^DJI':1,'^GSPC':1,'^IXIC':1,'^TMBMKCA-10Y':1};
+  if(equities[sym])return (isWeekday&&minutes>=570&&minutes<960)?'REGULAR':'CLOSED';
+  // Futures (CME): Sun 18:00 ET – Fri 17:00 ET, with daily 17:00–18:00 break
+  // FX & commodities (essentially the same window for our needs)
+  var nearly247={'ES=F':1,'NQ=F':1,'USDCAD=X':1,'GC=F':1,'CL=F':1};
+  if(nearly247[sym]){
+    if(wd==='Sat')return 'CLOSED';
+    if(wd==='Sun')return minutes>=18*60?'REGULAR':'CLOSED';
+    if(wd==='Fri')return minutes<17*60?'REGULAR':'CLOSED';
+    // Mon–Thu: closed during the 17:00–18:00 break
+    return (minutes>=17*60&&minutes<18*60)?'CLOSED':'REGULAR';
+  }
+  return '';
+}
 function _mktPillHTML(def,r,extraClass){
   var up=r.chg>=0,cls=up?'up':'dn',arrow=up?'&#9650;':'&#9660;';
   var valStr,chgStr;
@@ -1504,9 +1533,12 @@ function _mktPillHTML(def,r,extraClass){
     chgStr=sign+Math.abs(pct).toFixed(1)+'%/'+sign+chgFmt;
   }
   var href=_mktYfUrl+encodeURIComponent(def.sym);
-  var openDot=r.state==='REGULAR'?'<span class="mkt-pill-open" title="Market open"></span>':'';
+  // Yahoo marketState: REGULAR=open. Else closed. If missing, derive from current time + symbol.
+  var st=r.state||_inferMktState(def.sym);
+  var dot=st==='REGULAR'?'<span class="mkt-pill-state open" title="Market open"></span>'
+         :st?'<span class="mkt-pill-state closed" title="Market closed ('+st+')"></span>':'';
   return '<a class="mkt-pill'+(extraClass?' '+extraClass:'')+'" href="'+href+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'
-    +openDot
+    +dot
     +'<div class="mkt-pill-arrow '+cls+'">'+arrow+'</div>'
     +'<div class="mkt-pill-body"><div class="mkt-pill-name">'+esc(def.label)+'</div>'
     +'<div class="mkt-pill-val">'+valStr+'</div>'
