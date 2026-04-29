@@ -2599,11 +2599,9 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays,fmtFn){
     canvas._phBound=true;
     ov.addEventListener('mousemove',function(e){
       var pd=canvas._pd;if(!pd)return;
-      var bz=parseFloat(document.body.style.zoom)||1;
-      var rect=ov.getBoundingClientRect();
-      // Safari returns CSS px (not viewport px) from getBoundingClientRect() when body zoom is set.
-      // e.clientX is always viewport px, so divide by bz first, then subtract CSS rect.left.
-      var mx=e.clientX/bz-rect.left,my=e.clientY/bz-rect.top;
+      // offsetX/Y gives CSS-pixel coordinates relative to the target element, matching the canvas drawing space.
+      // Avoids body-zoom math; works correctly in Chrome/Safari/Firefox regardless of zoom setting.
+      var mx=e.offsetX,my=e.offsetY;
       var oc=ov.getContext('2d');
       oc.setTransform(dpr,0,0,dpr,0,0);
       oc.clearRect(0,0,pd.W,pd.H);
@@ -2632,9 +2630,7 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays,fmtFn){
     });
     ov.addEventListener('click',function(e){
       var pd=canvas._pd;if(!pd)return;
-      var bz=parseFloat(document.body.style.zoom)||1;
-      var rect=ov.getBoundingClientRect();
-      var mx=e.clientX/bz-rect.left;
+      var mx=e.offsetX;
       if(mx<pd.PL||mx>pd.W-pd.PR)return;
       var idx=Math.max(0,Math.min(pd.n-1,Math.round((mx-pd.PL)/pd.cW*(pd.n-1))));
       showPortBreakdown(canvas.id,pd.dates[idx]);
