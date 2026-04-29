@@ -1523,14 +1523,14 @@ function _mktPillHTML(def,r,extraClass){
     var prevInv=prev!==0?(1/prev)*100:inv;
     var invChg=inv-prevInv;
     var invSign=invChg>=0?'+':'-';
-    valStr=inv.toFixed(2)+'/'+r.price.toFixed(4);
-    chgStr=invSign+Math.abs(invChg).toFixed(2)+'/'+sign+Math.abs(r.chg).toFixed(4);
+    valStr=inv.toFixed(2)+' / '+r.price.toFixed(4);
+    chgStr=invSign+Math.abs(invChg).toFixed(2)+' / '+sign+Math.abs(r.chg).toFixed(4);
   } else {
     var fmt=function(v){return def.prefix+(v>=10000?v.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}):v.toFixed(def.dec))+def.suffix;};
     var aChg=Math.abs(r.chg);
     var chgFmt=def.prefix+(aChg<10?aChg.toFixed(def.dec):aChg.toFixed(2))+def.suffix;
     valStr=fmt(r.price);
-    chgStr=sign+Math.abs(pct).toFixed(1)+'%/'+sign+chgFmt;
+    chgStr=sign+Math.abs(pct).toFixed(1)+'% / '+sign+chgFmt;
   }
   var href=_mktYfUrl+encodeURIComponent(def.sym);
   // Yahoo marketState: REGULAR=open. Else closed. If missing, derive from current time + symbol.
