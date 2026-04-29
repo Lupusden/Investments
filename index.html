@@ -158,7 +158,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text'
 .mkt-pills-nav-bar::-webkit-scrollbar{display:none;}
 .mkt-pills-row{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
 .mkt-pills-row::-webkit-scrollbar{display:none;}
-.mkt-pill{display:flex;align-items:center;gap:4px;padding:5px 10px;background:var(--card);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);border:1px solid var(--border-light);flex-shrink:0;cursor:pointer;text-decoration:none;color:inherit;transition:box-shadow .15s,border-color .15s;}
+.mkt-pill{position:relative;display:flex;align-items:center;gap:4px;padding:5px 10px;background:var(--card);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);border:1px solid var(--border-light);flex-shrink:0;cursor:pointer;text-decoration:none;color:inherit;transition:box-shadow .15s,border-color .15s;}
+.mkt-pill-open{position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:#34c759;box-shadow:0 0 0 1px rgba(255,255,255,.9);}
 .mkt-pill:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);border-color:var(--blue);}
 .mkt-pill-arrow{font-size:9px;line-height:1;margin-top:2px;}
 .mkt-pill-arrow.up{color:var(--green-text);}.mkt-pill-arrow.dn{color:#ff3b30;}
@@ -1503,7 +1504,9 @@ function _mktPillHTML(def,r,extraClass){
     chgStr=sign+Math.abs(pct).toFixed(1)+'%/'+sign+chgFmt;
   }
   var href=_mktYfUrl+encodeURIComponent(def.sym);
+  var openDot=r.state==='REGULAR'?'<span class="mkt-pill-open" title="Market open"></span>':'';
   return '<a class="mkt-pill'+(extraClass?' '+extraClass:'')+'" href="'+href+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'
+    +openDot
     +'<div class="mkt-pill-arrow '+cls+'">'+arrow+'</div>'
     +'<div class="mkt-pill-body"><div class="mkt-pill-name">'+esc(def.label)+'</div>'
     +'<div class="mkt-pill-val">'+valStr+'</div>'
@@ -1541,7 +1544,7 @@ function fetchMarketIndices(){
       if(meta&&meta.regularMarketPrice!=null){
         var price=meta.regularMarketPrice;
         var prev=meta.chartPreviousClose||meta.previousClose||price;
-        results[def.sym]={price:price,chg:price-prev};
+        results[def.sym]={price:price,chg:price-prev,state:meta.marketState||''};
       }
     }).catch(function(){});
   })).then(function(){
