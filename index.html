@@ -1525,14 +1525,13 @@ function _mktPillsHTML(){
 function _fillMktPills(){
   var html=_mktPillsHTML();
   var el=document.getElementById('mktPills');
-  if(el){
-    el.innerHTML=html;
-    var nb=document.getElementById('mktPillsBar');
-    if(nb){
-      // Hide nav fallback only when hero actually has real pill elements
-      var hasPills=!!el.querySelector('.mkt-pill');
-      nb.style.display=hasPills?'none':'';
-    }
+  var nb=document.getElementById('mktPillsBar');
+  if(el)el.innerHTML=html;
+  if(nb){
+    nb.innerHTML=html; // keep nav fallback in sync so it shows fresh data (e.g. open-market dot)
+    // Hide nav fallback only when hero actually has real pill elements
+    var hasPills=el&&!!el.querySelector('.mkt-pill');
+    nb.style.display=hasPills?'none':'';
   }
 }
 function fetchMarketIndices(){
