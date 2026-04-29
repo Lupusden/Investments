@@ -2550,11 +2550,13 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays,fmtFn){
     var label=fmtFn(values[idx]);
     var lw=ctx.measureText(label).width,pw=lw+14,ph=17,pr=8.5;
     var lty=Math.max(dotY-ph-8,2); // pill above the line — clamp to canvas top, not chart top, so pills can sit in the top padding area
+    // Clamp pill x so it doesn't get clipped at the canvas edges (last/first pill near chart bounds)
+    var ltx=Math.max(2,Math.min(rx-pw/2,W-pw-2));
     ctx.fillStyle='rgba(255,255,255,0.95)';
     ctx.strokeStyle='rgba(0,0,0,0.13)';ctx.lineWidth=1;
-    ctx.beginPath();ctx.roundRect(rx-pw/2,lty,pw,ph,pr);ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.roundRect(ltx,lty,pw,ph,pr);ctx.fill();ctx.stroke();
     ctx.fillStyle='#1d1d1f';ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(label,rx,lty+ph/2);
+    ctx.fillText(label,ltx+pw/2,lty+ph/2);
     // Dot with white ring — at actual data x
     var dotC=values[idx]>=0?'#34c759':'#ff3b30';
     ctx.beginPath();ctx.arc(rx,dotY,4.5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
