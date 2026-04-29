@@ -2420,8 +2420,8 @@ function _portDateLabel(dateStr){
   var d=new Date(dateStr);
   return d.getDate()+_PMONS[d.getMonth()]+"'"+String(d.getFullYear()).slice(2);
 }
-function _portFmtVal(v){return Math.abs(v)>=1e6?(v/1e6).toFixed(2)+'M':Math.abs(v)>=1e3?(v/1e3).toFixed(2)+'K':v.toFixed(2);}
-function _portFmtValDollar(v){var s=v<0?'-':'',a=Math.abs(v);return s+'$'+(a>=1e6?(a/1e6).toFixed(2)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0));}
+function _portFmtVal(v){return Math.abs(v)>=1e6?(v/1e6).toFixed(3)+'M':Math.abs(v)>=1e3?(v/1e3).toFixed(2)+'K':v.toFixed(2);}
+function _portFmtValDollar(v){var s=v<0?'-':'',a=Math.abs(v);return s+'$'+(a>=1e6?(a/1e6).toFixed(3)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0));}
 function _niceAxisTicks(dataMin,dataMax){
   if(dataMin===dataMax){dataMin-=1;dataMax+=1;}
   var range=dataMax-dataMin,rawStep=range/4;
