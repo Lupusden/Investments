@@ -2479,9 +2479,19 @@ function _drawPortChart(canvas,tooltipId,data,selRange,overlays,fmtFn){
     if(sMin===sMax){sMin-=100;sMax+=100;}
     var sStep=500,saxMin=Math.floor(sMin/sStep)*sStep,saxMax=Math.ceil(sMax/sStep)*sStep;
     sMin=saxMin;sMax=saxMax;var sR=sMax-sMin;
+    // Align the overlay's first non-null value with the portfolio's first value at the same y position
+    // so visual divergence on the chart reflects relative performance from the start point onward.
+    var spFirstVal=null;
+    for(var _si=0;_si<ovFilled[0].vals.length;_si++){if(ovFilled[0].vals[_si]!=null){spFirstVal=ovFilled[0].vals[_si];break;}}
+    if(spFirstVal!=null&&vR>0){
+      sMin=spFirstVal-sR*(values[0]-minV)/vR;
+      sMax=sMin+sR;
+    }
     function yOfOv(v){return PT+(1-(v-sMin)/sR)*cH;}
     ctx.font='10px -apple-system,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
-    var saxTicks=[],_st=saxMin;while(_st<=saxMax+1){saxTicks.push(_st);_st+=sStep;}
+    // Ticks at 500-multiples within the shifted axis range
+    var saxTicks=[],_tFirst=Math.ceil(sMin/sStep)*sStep;
+    for(var _t=_tFirst;_t<=sMax+1;_t+=sStep)saxTicks.push(_t);
     saxTicks.forEach(function(gv2){
       var gy2=yOfOv(gv2);if(gy2<PT-2||gy2>PT+cH+2)return;
       ctx.fillStyle='rgba(0,113,227,0.7)';ctx.fillText((gv2/1000).toFixed(1)+'K',W-PR+6,gy2);
