@@ -1513,11 +1513,11 @@ function _inferMktState(sym){
   return '';
 }
 function _mktPillHTML(def,r,extraClass){
-  var up=r.chg>=0,cls=up?'up':'dn',arrow=up?'&#9650;':'&#9660;';
   var valStr,chgStr;
   var prev=r.price-r.chg;
   var pct=prev!==0?(r.chg/prev*100):0;
   var sign=r.chg>=0?'+':'-';
+  var up,cls,arrow;
   if(def.isFx){
     var inv=(1/r.price)*100;
     var prevInv=prev!==0?(1/prev)*100:inv;
@@ -1525,12 +1525,15 @@ function _mktPillHTML(def,r,extraClass){
     var invSign=invChg>=0?'+':'-';
     valStr=inv.toFixed(2)+' / '+r.price.toFixed(4);
     chgStr=invSign+Math.abs(invChg).toFixed(2)+' / '+sign+Math.abs(r.chg).toFixed(4);
+    // FX color follows CAD strength: green = CAD up (CADUSD increased / USDCAD decreased)
+    up=invChg>=0;cls=up?'up':'dn';arrow=up?'&#9650;':'&#9660;';
   } else {
     var fmt=function(v){return def.prefix+(v>=10000?v.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}):v.toFixed(def.dec))+def.suffix;};
     var aChg=Math.abs(r.chg);
     var chgFmt=def.prefix+(aChg<10?aChg.toFixed(def.dec):aChg.toFixed(2))+def.suffix;
     valStr=fmt(r.price);
     chgStr=sign+Math.abs(pct).toFixed(1)+'% / '+sign+chgFmt;
+    up=r.chg>=0;cls=up?'up':'dn';arrow=up?'&#9650;':'&#9660;';
   }
   var href=_mktYfUrl+encodeURIComponent(def.sym);
   // Yahoo marketState: REGULAR=open. Else closed. If missing, derive from current time + symbol.
